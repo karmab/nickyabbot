@@ -5,6 +5,7 @@ RUN apk add --no-cache python python-dev py-pip build-base \
   && pip install PyTelegramBotAPI==2.2.3
 
 ADD nickyabbot.py /
+ADD staticquotes.txt /root
 VOLUME ["/root/troll.db"]
 
 CMD ["python", "/nickyabbot.py"]

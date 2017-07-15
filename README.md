@@ -11,7 +11,7 @@ Telegram Troll Bot
 Then i use 
 
 ```
-docker run --name=trollbot -e TOKEN=$TOKEN -d  karmab/nickyabbot
+docker run --name=trollbot -v /root/troll.db:/root/troll.db -e TOKEN=$TOKEN -d  karmab/nickyabbot
 ```
 
 ## TODO
