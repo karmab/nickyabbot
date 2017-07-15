@@ -36,9 +36,10 @@ def help(message):
 
 @bot.message_handler(commands=['troll'])
 def get(message):
+    global trolldb
     quote = message.text.replace('/troll', '').strip()
     chatid = message.chat.id if message.chat.title is not None else 0
-    db = sqlite3.connect('troll.db')
+    db = sqlite3.connect(trolldb)
     cursor = db.cursor()
     if quote == '':
         cursor.execute('''SELECT quote FROM quotes WHERE chatid = ? OR chatid = 0 ORDER BY RANDOM() LIMIT 1''', (chatid,))
@@ -58,7 +59,8 @@ def get(message):
 
 @bot.message_handler(commands=['trollall', 'trolllist'])
 def all(message):
-    db = sqlite3.connect('troll.db')
+    global trolldb
+    db = sqlite3.connect(trolldb)
     cursor = db.cursor()
     if message.chat.type == 'group':
         cursor.execute('SELECT quote FROM quotes where chatid = ? or chatid = 0', (message.chat.id,))
@@ -72,6 +74,7 @@ def all(message):
 
 @bot.message_handler(commands=['trolladd'])
 def add(message):
+    global trolldb
     quote = message.text.replace('/trolladd ', '')
     if quote == '':
         bot.reply_to(message, 'Missing troll text to add')
@@ -80,7 +83,7 @@ def add(message):
     if message.chat.type != 'group':
         bot.reply_to(message, 'Trolls can only be added to groups')
         return
-    db = sqlite3.connect('troll.db')
+    db = sqlite3.connect(trolldb)
     cursor = db.cursor()
     cursor.execute('''INSERT INTO quotes(chatid,quote) VALUES(?,?)''', (message.chat.id, quote))
     print("Adding Troll message to group %s" % message.chat.title)
@@ -91,6 +94,7 @@ def add(message):
 
 @bot.message_handler(commands=['trolldel', 'trolldelete'])
 def delete(message):
+    global trolldb
     quote = message.text.replace('/trolldelete ', '').replace('/trolldel', '').strip()
     print quote
     if quote == '':
@@ -99,7 +103,7 @@ def delete(message):
     if message.chat.type != 'group':
         bot.reply_to(message, 'Trolls can only be deleted from groups')
         return
-    db = sqlite3.connect('troll.db')
+    db = sqlite3.connect(trolldb)
     cursor = db.cursor()
     deleted = cursor.execute('''DELETE FROM QUOTES WHERE chatid = ? and  quote = ?''', (message.chat.id, quote))
     if deleted.rowcount > 0:
@@ -111,6 +115,7 @@ def delete(message):
     db.commit()
     db.close()
 
-db_setup(dbfile='troll.db')
+trolldb = os.path.expanduser("~/troll.db")
+db_setup(dbfile=trolldb)
 print("Ready for trolling!")
 bot.polling()
