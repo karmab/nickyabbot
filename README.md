@@ -1,11 +1,6 @@
 # nickyabbot repository
 
-[![Build Status](https://travis-ci.org/karmab/kcli.svg?branch=master)](https://travis-ci.org/karmab/kcli)
-[![Pypi](http://img.shields.io/pypi/v/kcli.svg)](https://pypi.python.org/pypi/kcli/)
-[![Copr](https://copr.fedorainfracloud.org/coprs/karmab/kcli/package/kcli/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/karmab/kcli/package/kcli)
-[![](https://images.microbadger.com/badges/image/karmab/kcli.svg)](https://microbadger.com/images/karmab/kcli "Get your own image badge on microbadger.com")
-
-![Screenshot](kcli.jpg)
+[![](https://images.microbadger.com/badges/image/karmab/nickyabbot.svg)](https://microbadger.com/images/karmab/nickyabbot "Get your own image badge on microbadger.com")
 
 Telegram Troll Bot
 
@@ -22,9 +17,6 @@ docker run --name=trollbot -e TOKEN=$TOKEN -d  karmab/nickyabbot
 ## TODO
 
 - Read The docs
-## Contributors
-
-See [contributors on GitHub](https://github.com/karmab/kcli/graphs/contributors)
 
 ## Copyright
 
