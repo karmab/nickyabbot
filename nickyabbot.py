@@ -116,6 +116,7 @@ def delete(message):
     db.close()
 
 trolldb = os.path.expanduser("~/troll.db")
+print trolldb
 db_setup(dbfile=trolldb)
 print("Ready for trolling!")
 bot.polling()
