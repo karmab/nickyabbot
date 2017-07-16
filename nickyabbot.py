@@ -28,7 +28,7 @@ def help(message):
     /troll          Displays a random troll ( or finds the one matching provided string)
     /trolladd       Adds the indicated troll
     /trolldelete    Deletes given troll
-    /trolllis       Lists all the trolls
+    /trolllist      Lists all the trolls
     /trollhelp      This help
     '''
     bot.reply_to(message, helpmessage)
