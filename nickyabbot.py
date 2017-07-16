@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import re
 import telebot
 
 
@@ -20,24 +21,25 @@ if 'TOKEN' not in os.environ:
     os._exit(1)
 
 bot = telebot.TeleBot(os.environ['TOKEN'])
+botname = "@%s" % bot.get_me().username
 
 
 @bot.message_handler(commands=['trollhelp'])
 def help(message):
-    helpmessage = '''Those are the commands available
-    /troll          Displays a random troll ( or finds the one matching provided string)
-    /trolladd       Adds the indicated troll
-    /trolldelete    Deletes given troll
-    /trolllist      Lists all the trolls
-    /trollhelp      This help
-    '''
+    helpmessage = '''Those are the commands available:
+troll - Displays random or matching troll
+trolladd - Adds indicated troll
+trolldelete - Deletes given troll
+trolllist - Lists all trolls
+trollhelp - This help
+'''
     bot.reply_to(message, helpmessage)
 
 
 @bot.message_handler(commands=['troll'])
 def get(message):
     global trolldb
-    quote = message.text.replace('/troll', '').strip()
+    quote = re.sub(r"/troll(%s|)" % botname, '', message.text).strip()
     chatid = message.chat.id if message.chat.title is not None else 0
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
@@ -45,7 +47,7 @@ def get(message):
         cursor.execute('''SELECT quote FROM quotes WHERE chatid = ? OR chatid = 0 ORDER BY RANDOM() LIMIT 1''', (chatid,))
         fetch = cursor.fetchone()
     else:
-        cursor.execute("SELECT quote FROM quotes WHERE quote like ? AND (chatid = ? OR chatid = 0)", ('%' + quote + '%', chatid,))
+        cursor.execute("SELECT quote FROM quotes WHERE quote like ? AND (chatid = ? OR chatid = 0) ORDER BY RANDOM() LIMIT 1", ('%' + quote + '%', chatid,))
         fetch = cursor.fetchone()
         if fetch is None:
             print("No Matching quote found")
@@ -75,7 +77,7 @@ def all(message):
 @bot.message_handler(commands=['trolladd'])
 def add(message):
     global trolldb
-    quote = message.text.replace('/trolladd ', '')
+    quote = re.sub(r"/trolladd(%s|)" % botname, '', message.text).strip()
     if quote == '':
         bot.reply_to(message, 'Missing troll text to add')
         return
@@ -95,7 +97,7 @@ def add(message):
 @bot.message_handler(commands=['trolldel', 'trolldelete'])
 def delete(message):
     global trolldb
-    quote = message.text.replace('/trolldelete ', '').replace('/trolldel', '').strip()
+    quote = re.sub(r"/troll(delete|del)(%s|)" % botname, '', message.text).strip()
     print quote
     if quote == '':
         bot.reply_to(message, 'Missing troll text to delete')
