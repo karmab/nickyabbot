@@ -8,4 +8,4 @@ ADD nickyabbot.py /
 ADD staticquotes.txt /root
 VOLUME ["/root/troll.db"]
 
-CMD ["python", "/nickyabbot.py"]
+CMD ["python", "-u", "/nickyabbot.py"]
