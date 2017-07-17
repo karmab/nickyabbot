@@ -27,7 +27,21 @@ bot = telebot.TeleBot(os.environ['TOKEN'])
 botname = "@%s" % bot.get_me().username
 
 
-@bot.message_handler(commands=['trollhelp'])
+@bot.message_handler(commands=['start', "start%s" % botname])
+def start(message):
+    startmessage = ''' *Welcome to the troll bot*
+
+This bot is designed to ease trolling within your group chats
+
+/troll to get a random troll
+/troll PATTERN to get matching troll
+/trolladd PATTERN to add troll to current group
+/trolldelete PATTERN to delete troll from current group
+'''
+    bot.reply_to(message, startmessage, parse_mode='Markdown')
+
+
+@bot.message_handler(commands=['trollhelp', 'help', "help%s" % botname])
 def help(message):
     helpmessage = '''Those are the commands available:
 troll - Displays random or matching troll
