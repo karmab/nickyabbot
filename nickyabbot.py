@@ -1,3 +1,4 @@
+# import logging
 import sqlite3
 import os
 import re
@@ -20,6 +21,8 @@ if 'TOKEN' not in os.environ:
     print("missing TOKEN.Leaving...")
     os._exit(1)
 
+# logger = telebot.logger
+# telebot.logger.setLevel(logging.DEBUG)
 bot = telebot.TeleBot(os.environ['TOKEN'])
 botname = "@%s" % bot.get_me().username
 
@@ -64,7 +67,7 @@ def all(message):
     global trolldb
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
-    if message.chat.type == 'group':
+    if 'group' in message.chat.type:
         cursor.execute('SELECT quote FROM quotes where chatid = ? or chatid = 0', (message.chat.id,))
     else:
         cursor.execute('SELECT quote FROM quotes where chatid = 0')
@@ -82,7 +85,8 @@ def add(message):
         bot.reply_to(message, 'Missing troll text to add')
         return
     quote = quote.strip()
-    if message.chat.type != 'group':
+    print message.chat.type
+    if 'group' not in message.chat.type:
         bot.reply_to(message, 'Trolls can only be added to groups')
         return
     db = sqlite3.connect(trolldb)
@@ -102,7 +106,7 @@ def delete(message):
     if quote == '':
         bot.reply_to(message, 'Missing troll text to delete')
         return
-    if message.chat.type != 'group':
+    if 'group' not in message.chat.type:
         bot.reply_to(message, 'Trolls can only be deleted from groups')
         return
     db = sqlite3.connect(trolldb)
