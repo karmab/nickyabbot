@@ -109,7 +109,7 @@ def add(message):
     cursor = db.cursor()
     cursor.execute('''INSERT INTO quotes(chatid,quote) VALUES(?,?)''', (message.chat.id, quote))
     print("Adding Troll message to group %s" % message.chat.title)
-    bot.reply_to(message, 'Troll added to your channel')
+    bot.reply_to(message, 'Troll added to your group')
     db.commit()
     db.close()
 
