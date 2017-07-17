@@ -3,6 +3,9 @@ import sqlite3
 import os
 import re
 import telebot
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 
 def db_setup(dbfile='troll.db'):
@@ -99,7 +102,6 @@ def add(message):
         bot.reply_to(message, 'Missing troll text to add')
         return
     quote = quote.strip()
-    print message.chat.type
     if 'group' not in message.chat.type:
         bot.reply_to(message, 'Trolls can only be added to groups')
         return
