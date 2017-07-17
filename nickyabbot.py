@@ -137,6 +137,13 @@ def delete(message):
     db.commit()
     db.close()
 
+
+@bot.message_handler(func=lambda m: True)
+def custom(message):
+    if 'transcoding' in message.text.lower():
+        bot.reply_to(message, 'chupito!!!')
+
+
 trolldb = os.path.expanduser("~/troll.db")
 db_setup(dbfile=trolldb)
 print("Ready for trolling!")
