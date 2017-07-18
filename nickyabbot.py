@@ -94,6 +94,27 @@ def all(message):
     bot.reply_to(message, quotes)
 
 
+# @bot.inline_handler(lambda query: query.query == 'text')
+@bot.inline_handler(lambda q: q.query)
+def inline_all(query):
+    message = query.query
+    global trolldb
+    chatid = 0
+    db = sqlite3.connect(trolldb)
+    cursor = db.cursor()
+    cursor.execute("SELECT quote FROM quotes WHERE quote like ? AND (chatid = ? OR chatid = 0)", ('%' + message + '%', chatid,))
+    fetch = cursor.fetchone()
+    if fetch is None:
+        print("No Matching quote found")
+        bot.answer_inline_query(query.id, 'Nothing found')
+        return
+    results = []
+    for index, value in enumerate(fetch):
+        results.append(telebot.types.InlineQueryResultArticle(str(index), value, telebot.types.InputTextMessageContent("<troll>%s</troll>" % value)))
+    print("Sending all troll messages to user %s" % query.from_user.username)
+    bot.answer_inline_query(query.id, results)
+
+
 @bot.message_handler(commands=['trolladd'])
 def add(message):
     global trolldb
@@ -141,7 +162,7 @@ def delete(message):
 @bot.message_handler(func=lambda m: True)
 def custom(message):
     if 'transcoding' in message.text.lower():
-        bot.reply_to(message, 'chupito!!!')
+        bot.reply_to(message, 'un chupito para @%s!!!' % message.from_user.username)
 
 
 trolldb = os.path.expanduser("~/troll.db")
