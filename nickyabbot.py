@@ -94,8 +94,7 @@ def all(message):
     bot.reply_to(message, quotes)
 
 
-# @bot.inline_handler(lambda query: query.query == 'text')
-@bot.inline_handler(lambda q: q.query)
+@bot.inline_handler(lambda query: query.query == 'text')
 def inline_all(query):
     message = query.query
     global trolldb
