@@ -17,6 +17,7 @@ docker run --name=trollbot -v ~/troll.db:/root/troll.db -v ~/staticquotes.txt:/r
 ## TODO
 
 - Read The docs
+- Cool things
 
 ## Copyright
 

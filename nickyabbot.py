@@ -56,7 +56,7 @@ trollhelp - This help
     bot.reply_to(message, helpmessage)
 
 
-@bot.message_handler(commands=['troll'])
+@bot.message_handler(commands=['troll', "troll%s" % botname])
 def get(message):
     global trolldb
     quote = re.sub(r"/troll(%s|)" % botname, '', message.text).strip()
@@ -79,7 +79,7 @@ def get(message):
     bot.reply_to(message, quote)
 
 
-@bot.message_handler(commands=['trollall', 'trolllist'])
+@bot.message_handler(commands=['trollall', 'trolllist', "trollall%s" % botname, "trolllist%s" % botname])
 def all(message):
     global trolldb
     db = sqlite3.connect(trolldb)
@@ -114,7 +114,7 @@ def inline_all(query):
     bot.answer_inline_query(query.id, results)
 
 
-@bot.message_handler(commands=['trolladd'])
+@bot.message_handler(commands=['trolladd', "trolladd%s" % botname])
 def add(message):
     global trolldb
     quote = re.sub(r"/trolladd(%s|)" % botname, '', message.text).strip()
@@ -134,7 +134,7 @@ def add(message):
     db.close()
 
 
-@bot.message_handler(commands=['trolldel', 'trolldelete'])
+@bot.message_handler(commands=['trolldel', 'trolldelete', "trolldel%s" % botname, "trolldelete%s" % botname])
 def delete(message):
     global trolldb
     quote = re.sub(r"/troll(delete|del)(%s|)" % botname, '', message.text).strip()
