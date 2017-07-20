@@ -47,11 +47,11 @@ This bot is designed to ease trolling within your group chats
 @bot.message_handler(commands=['trollhelp', 'help', "help%s" % botname])
 def help(message):
     helpmessage = '''Those are the commands available:
-troll - Displays random or matching troll
-trolladd - Adds indicated troll
-trolldelete - Deletes given troll
-trolllist - Lists all trolls
-trollhelp - This help
+/troll - Displays random or matching troll
+/trolladd - Adds indicated troll
+/trolldelete - Deletes given troll
+/trolllist - Lists all trolls
+/trollhelp - This help
 '''
     bot.reply_to(message, helpmessage)
 
@@ -117,16 +117,22 @@ def inline_all(query):
 @bot.message_handler(commands=['trolladd', "trolladd%s" % botname])
 def add(message):
     global trolldb
-    quote = re.sub(r"/trolladd(%s|)" % botname, '', message.text).strip()
-    if quote == '':
-        bot.reply_to(message, 'Missing troll text to add')
-        return
-    quote = quote.strip()
     if 'group' not in message.chat.type:
         bot.reply_to(message, 'Trolls can only be added to groups')
         return
+    quote = re.sub(r"/trolladd(%s|)" % botname, '', message.text).strip()
+    if quote == '':
+        # bot.reply_to(message, 'Missing troll text to add')
+        bot.send_message(message.chat.id, "Allright. Give me a troll", reply_markup=telebot.types.ForceReply(selective=False))
+        return
+    quote = quote.strip()
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
+    cursor.execute('''SELECT quote FROM quotes where chatid = ? AND quote == ?''', (message.chat.id, quote))
+    existing = cursor.fetchone()
+    if existing is not None:
+        bot.reply_to(message, 'Troll allready exists in this group')
+        return
     cursor.execute('''INSERT INTO quotes(chatid,quote) VALUES(?,?)''', (message.chat.id, quote))
     print("Adding Troll message to group %s" % message.chat.title)
     bot.reply_to(message, 'Troll added to your group')
@@ -150,7 +156,7 @@ def delete(message):
     deleted = cursor.execute('''DELETE FROM QUOTES WHERE chatid = ? and  quote = ?''', (message.chat.id, quote))
     if deleted.rowcount > 0:
         print("Deleted Troll message from group %s" % message.chat.title)
-        bot.reply_to(message, 'Troll deleted from your channel')
+        bot.reply_to(message, 'Troll deleted from your group')
     else:
         print("No Troll message deleted from group %s" % message.chat.title)
         bot.reply_to(message, 'Troll was not deleted from your group')
@@ -164,6 +170,20 @@ def custom(message):
         bot.reply_to(message, 'un chupito para @%s!!!' % message.from_user.username)
     elif '$deity' in message.text.lower():
         bot.reply_to(message, '$deity no existe @%s. Lo siento...' % message.from_user.username)
+    elif message.reply_to_message is not None and 'Give me a troll' in message.reply_to_message.text:
+        quote = message.text.strip()
+        db = sqlite3.connect(trolldb)
+        cursor = db.cursor()
+        cursor.execute('''SELECT quote FROM quotes where chatid = ? AND quote == ?''', (message.chat.id, quote))
+        existing = cursor.fetchone()
+        if existing is not None:
+            bot.reply_to(message, 'Troll allready exists in this group')
+            return
+        cursor.execute('''INSERT INTO quotes(chatid,quote) VALUES(?,?)''', (message.chat.id, quote))
+        print("Adding Troll message to group %s" % message.chat.title)
+        bot.reply_to(message, 'Troll added to your group')
+        db.commit()
+        db.close()
 
 
 trolldb = os.path.expanduser("~/troll.db")
