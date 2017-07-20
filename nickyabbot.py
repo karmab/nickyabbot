@@ -162,6 +162,8 @@ def delete(message):
 def custom(message):
     if 'transcoding' in message.text.lower():
         bot.reply_to(message, 'un chupito para @%s!!!' % message.from_user.username)
+    elif '$deity' in message.text.lower():
+        bot.reply_to(message, '$deity no existe @%s. Lo siento...' % message.from_user.username)
 
 
 trolldb = os.path.expanduser("~/troll.db")
