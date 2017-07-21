@@ -170,7 +170,7 @@ def custom(message):
         bot.reply_to(message, 'un chupito para @%s!!!' % message.from_user.username)
     elif '$deity' in message.text.lower():
         bot.reply_to(message, '$deity no existe @%s. Lo siento...' % message.from_user.username)
-    elif message.reply_to_message is not None and 'Give me a troll' in message.reply_to_message.text:
+    elif message.reply_to_message is not None and message.reply_to_message.text is not None and 'Give me a troll' in message.reply_to_message.text:
         quote = message.text.strip()
         db = sqlite3.connect(trolldb)
         cursor = db.cursor()
