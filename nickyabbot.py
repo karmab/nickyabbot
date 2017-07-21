@@ -146,7 +146,6 @@ def delete(message):
     quote = re.sub(r"/troll(delete|del)(%s|)" % botname, '', message.text).strip()
     print quote
     if quote == '':
-        # bot.reply_to(message, 'Missing troll text to delete')
         db = sqlite3.connect(trolldb)
         cursor = db.cursor()
         cursor.execute('''SELECT quote FROM quotes where chatid = ?''', (message.chat.id,))
@@ -154,7 +153,7 @@ def delete(message):
         if not existing:
             bot.reply_to(message, 'No trolls for you to delete')
         else:
-            markup = telebot.types.ReplyKeyboardMarkup(row_width=2)
+            markup = telebot.types.ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, selective=True)
             for entry in existing:
                 markup.add(telebot.types.KeyboardButton(entry[0]))
             bot.send_message(message.chat.id, "Allright. Delete a troll", reply_markup=markup)
