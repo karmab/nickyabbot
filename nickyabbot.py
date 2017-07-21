@@ -94,7 +94,7 @@ def all(message):
     bot.reply_to(message, quotes)
 
 
-@bot.inline_handler(lambda query: query.query == 'text')
+@bot.inline_handler(lambda query: len(query.query) > 0)
 def inline_all(query):
     message = query.query
     global trolldb
@@ -109,7 +109,7 @@ def inline_all(query):
         return
     results = []
     for index, value in enumerate(fetch):
-        results.append(telebot.types.InlineQueryResultArticle(str(index), value, telebot.types.InputTextMessageContent("<troll>%s</troll>" % value)))
+        results.append(telebot.types.InlineQueryResultArticle(str(index), value, telebot.types.InputTextMessageContent(value)))
     print("Sending all troll messages to user %s" % query.from_user.username)
     bot.answer_inline_query(query.id, results)
 
