@@ -11,11 +11,11 @@ sys.setdefaultencoding('utf-8')
 def db_setup(dbfile='troll.db'):
     db = sqlite3.connect(dbfile)
     cursor = db.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS quotes (chatid int, quote text)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS quotes (chatid int, username text, quote text)')
     cursor.execute('DELETE FROM quotes WHERE chatid = 0')
     with open(os.path.expanduser('~/staticquotes.txt'), 'r') as staticquotes:
         for line in staticquotes:
-            cursor.execute('''INSERT INTO quotes(chatid,quote) VALUES(?,?)''', (0, line.strip()))
+            cursor.execute('''INSERT INTO quotes(chatid,username,quote) VALUES(?,?,?)''', (0, 'nickyabbot', line.strip()))
     db.commit()
     db.close()
 
@@ -133,7 +133,7 @@ def add(message):
     if existing is not None:
         bot.reply_to(message, 'Troll allready exists in this group')
         return
-    cursor.execute('''INSERT INTO quotes(chatid,quote) VALUES(?,?)''', (message.chat.id, quote))
+    cursor.execute('''INSERT INTO quotes(chatid,username,quote) VALUES(?,?,?)''', (message.chat.id, message.from_user.username, quote))
     print("Adding Troll message to group %s" % message.chat.title)
     bot.reply_to(message, 'Troll added to your group')
     db.commit()
@@ -147,7 +147,7 @@ def delete(message):
     if quote == '':
         db = sqlite3.connect(trolldb)
         cursor = db.cursor()
-        cursor.execute('''SELECT quote FROM quotes where chatid = ?''', (message.chat.id,))
+        cursor.execute('''SELECT quote FROM quotes where chatid = ? and username = ?''', (message.chat.id, message.from_user.username))
         existing = cursor.fetchall()
         if not existing:
             bot.reply_to(message, 'No trolls for you to delete')
@@ -162,7 +162,7 @@ def delete(message):
         return
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
-    deleted = cursor.execute('''DELETE FROM QUOTES WHERE chatid = ? and  quote = ?''', (message.chat.id, quote))
+    deleted = cursor.execute('''DELETE FROM QUOTES WHERE chatid = ? and  username = ? and quote = ?''', (message.chat.id, message.from_user.username, quote))
     if deleted.rowcount > 0:
         print("Deleted Troll message from group %s" % message.chat.title)
         bot.reply_to(message, 'Troll deleted from your group')
@@ -189,7 +189,7 @@ def custom(message):
             if existing is not None:
                 bot.reply_to(message, 'Troll allready exists in this group')
                 return
-            cursor.execute('''INSERT INTO quotes(chatid,quote) VALUES(?,?)''', (message.chat.id, quote))
+            cursor.execute('''INSERT INTO quotes(chatid,username,quote) VALUES(?,?,?)''', (message.chat.id, message.from_user.username, quote))
             print("Adding Troll to group %s" % message.chat.title)
             bot.reply_to(message, 'Troll added to your group')
             db.commit()
@@ -198,7 +198,7 @@ def custom(message):
             quote = message.text.strip()
             db = sqlite3.connect(trolldb)
             cursor = db.cursor()
-            deleted = cursor.execute('''DELETE FROM quotes WHERE chatid = ? AND quote = ?''', (message.chat.id, quote))
+            deleted = cursor.execute('''DELETE FROM quotes WHERE chatid = ? AND username = ? AND quote = ?''', (message.chat.id, message.from_user.username, quote))
             if deleted.rowcount > 0:
                 print("Deleted Troll from group %s" % message.chat.title)
                 markup = telebot.types.ReplyKeyboardHide(selective=True)
