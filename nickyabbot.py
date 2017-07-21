@@ -123,7 +123,7 @@ def add(message):
     quote = re.sub(r"/trolladd(%s|)" % botname, '', message.text).strip()
     print(quote)
     if quote == '':
-        bot.send_message(message.chat.id, "Allright. Give me a troll", reply_markup=telebot.types.ForceReply(selective=False))
+        bot.send_message(message.chat.id, "Allright @%s. Give me a troll" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
         return
     quote = quote.strip()
     db = sqlite3.connect(trolldb)
@@ -152,10 +152,10 @@ def delete(message):
         if not existing:
             bot.reply_to(message, 'No trolls for you to delete')
         else:
-            markup = telebot.types.ReplyKeyboardMarkup(row_width=1, selective=False, one_time_keyboard=True, resize_keyboard=True)
+            markup = telebot.types.ReplyKeyboardMarkup(row_width=1, selective=True)
             for entry in existing:
                 markup.add(telebot.types.KeyboardButton(entry[0]))
-            bot.send_message(message.chat.id, "Allright. Delete a troll", reply_markup=markup)
+            bot.send_message(message.chat.id, "Allright @%s. Delete a troll" % message.from_user.username, reply_markup=markup)
         return
     if 'group' not in message.chat.type:
         bot.reply_to(message, 'Trolls can only be deleted from groups')
