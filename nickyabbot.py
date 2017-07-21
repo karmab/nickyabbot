@@ -121,9 +121,9 @@ def add(message):
         bot.reply_to(message, 'Trolls can only be added to groups')
         return
     quote = re.sub(r"/trolladd(%s|)" % botname, '', message.text).strip()
+    print(quote)
     if quote == '':
-        # bot.reply_to(message, 'Missing troll text to add')
-        bot.send_message(message.chat.id, "Allright. Give me a troll", reply_markup=telebot.types.ForceReply(selective=True))
+        bot.send_message(message.chat.id, "Allright. Give me a troll", reply_markup=telebot.types.ForceReply(selective=False))
         return
     quote = quote.strip()
     db = sqlite3.connect(trolldb)
@@ -144,7 +144,6 @@ def add(message):
 def delete(message):
     global trolldb
     quote = re.sub(r"/troll(delete|del)(%s|)" % botname, '', message.text).strip()
-    print quote
     if quote == '':
         db = sqlite3.connect(trolldb)
         cursor = db.cursor()
@@ -153,7 +152,7 @@ def delete(message):
         if not existing:
             bot.reply_to(message, 'No trolls for you to delete')
         else:
-            markup = telebot.types.ReplyKeyboardMarkup(row_width=2, selective=True)
+            markup = telebot.types.ReplyKeyboardMarkup(row_width=1, selective=False, one_time_keyboard=True)
             for entry in existing:
                 markup.add(telebot.types.KeyboardButton(entry[0]))
             bot.send_message(message.chat.id, "Allright. Delete a troll", reply_markup=markup)
@@ -181,6 +180,7 @@ def custom(message):
     elif '$deity' in message.text.lower():
         bot.reply_to(message, '$deity no existe @%s. Lo siento...' % message.from_user.username)
     elif message.reply_to_message is not None and message.reply_to_message.text is not None:
+        print "here i am"
         if 'Give me a troll' in message.reply_to_message.text:
             quote = message.text.strip()
             db = sqlite3.connect(trolldb)
