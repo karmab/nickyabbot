@@ -123,7 +123,7 @@ def add(message):
     quote = re.sub(r"/trolladd(%s|)" % botname, '', message.text).strip()
     if quote == '':
         # bot.reply_to(message, 'Missing troll text to add')
-        bot.send_message(message.chat.id, "Allright. Give me a troll", reply_markup=telebot.types.ForceReply(selective=False))
+        bot.send_message(message.chat.id, "Allright. Give me a troll", reply_markup=telebot.types.ForceReply(selective=True))
         return
     quote = quote.strip()
     db = sqlite3.connect(trolldb)
@@ -203,7 +203,7 @@ def custom(message):
             deleted = cursor.execute('''DELETE FROM quotes WHERE chatid = ? AND quote = ?''', (message.chat.id, quote))
             if deleted.rowcount > 0:
                 print("Deleted Troll from group %s" % message.chat.title)
-                markup = telebot.types.ReplyKeyboardHide(selective=False)
+                markup = telebot.types.ReplyKeyboardHide(selective=True)
                 bot.reply_to(message, 'Troll deleted from your group', reply_markup=markup)
             else:
                 bot.reply_to(message, 'No troll found to delete')
