@@ -153,7 +153,7 @@ def delete(message):
         if not existing:
             bot.reply_to(message, 'No trolls for you to delete')
         else:
-            markup = telebot.types.ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, selective=True)
+            markup = telebot.types.ReplyKeyboardMarkup(row_width=2, selective=True)
             for entry in existing:
                 markup.add(telebot.types.KeyboardButton(entry[0]))
             bot.send_message(message.chat.id, "Allright. Delete a troll", reply_markup=markup)
