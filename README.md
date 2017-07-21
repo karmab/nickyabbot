@@ -1,6 +1,7 @@
 # nickyabbot repository
 
 [![](https://images.microbadger.com/badges/image/karmab/nickyabbot.svg)](https://microbadger.com/images/karmab/nickyabbot "Get your own image badge on microbadger.com")
+![Super Dope](https://img.shields.io/badge/karmab-super%20dope-b9f2ff.svg)
 
 Telegram Troll Bot
 
