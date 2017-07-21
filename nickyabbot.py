@@ -152,7 +152,7 @@ def delete(message):
         if not existing:
             bot.reply_to(message, 'No trolls for you to delete')
         else:
-            markup = telebot.types.ReplyKeyboardMarkup(row_width=1, selective=False, one_time_keyboard=True)
+            markup = telebot.types.ReplyKeyboardMarkup(row_width=1, selective=False, one_time_keyboard=True, resize_keyboard=True)
             for entry in existing:
                 markup.add(telebot.types.KeyboardButton(entry[0]))
             bot.send_message(message.chat.id, "Allright. Delete a troll", reply_markup=markup)
@@ -180,7 +180,6 @@ def custom(message):
     elif '$deity' in message.text.lower():
         bot.reply_to(message, '$deity no existe @%s. Lo siento...' % message.from_user.username)
     elif message.reply_to_message is not None and message.reply_to_message.text is not None:
-        print "here i am"
         if 'Give me a troll' in message.reply_to_message.text:
             quote = message.text.strip()
             db = sqlite3.connect(trolldb)
