@@ -177,7 +177,7 @@ def custom(message):
     try:
         if 'transcod' in message.text.lower():
             bot.reply_to(message, 'a chupito for @%s!!!' % message.from_user.username)
-        elif 'papichulo' in message.text.lower() and 'minWi' in message.text.lower():
+        elif 'papichulo' in message.text.lower() and ('minWi' in message.text.lower() or 'eminguez' in message.text.lower()):
             bot.reply_to(message, 'Please stop @%s. @minWi will be a father when he\'s ready' % message.from_user.username)
         elif '$deity' in message.text.lower():
             bot.reply_to(message, '$deity doesn\'t exist @%s. Sorry...' % message.from_user.username)
