@@ -174,39 +174,43 @@ def delete(message):
 
 @bot.message_handler(func=lambda m: True)
 def custom(message):
-    print message
-    if 'transcoding' in message.text.lower():
-        bot.reply_to(message, 'un chupito para @%s!!!' % message.from_user.username)
-    elif '$deity' in message.text.lower():
-        bot.reply_to(message, '$deity no existe @%s. Lo siento...' % message.from_user.username)
-    elif message.reply_to_message is not None and message.reply_to_message.text is not None:
-        if 'Give me a troll' in message.reply_to_message.text:
-            quote = message.text.strip()
-            db = sqlite3.connect(trolldb)
-            cursor = db.cursor()
-            cursor.execute('''SELECT quote FROM quotes where chatid = ? AND quote == ?''', (message.chat.id, quote))
-            existing = cursor.fetchone()
-            if existing is not None:
-                bot.reply_to(message, 'Troll allready exists in this group')
-                return
-            cursor.execute('''INSERT INTO quotes(chatid,username,quote) VALUES(?,?,?)''', (message.chat.id, message.from_user.username, quote))
-            print("Adding Troll to group %s" % message.chat.title)
-            bot.reply_to(message, 'Troll added to your group')
-            db.commit()
-            db.close()
-        elif 'Delete a troll' in message.reply_to_message.text:
-            quote = message.text.strip()
-            db = sqlite3.connect(trolldb)
-            cursor = db.cursor()
-            deleted = cursor.execute('''DELETE FROM quotes WHERE chatid = ? AND username = ? AND quote = ?''', (message.chat.id, message.from_user.username, quote))
-            if deleted.rowcount > 0:
-                print("Deleted Troll from group %s" % message.chat.title)
-                markup = telebot.types.ReplyKeyboardHide(selective=True)
-                bot.reply_to(message, 'Troll deleted from your group', reply_markup=markup)
-            else:
-                bot.reply_to(message, 'No troll found to delete')
-            db.commit()
-            db.close()
+    try:
+        if 'transcod' in message.text.lower():
+            bot.reply_to(message, 'a chupito for @%s!!!' % message.from_user.username)
+        elif 'papichulo' in message.text.lower() and 'minWi' in message.text.lower():
+            bot.reply_to(message, 'Please stop @%s. @minWi will be a father when he\'s ready' % message.from_user.username)
+        elif '$deity' in message.text.lower():
+            bot.reply_to(message, '$deity doesn\'t exist @%s. Sorry...' % message.from_user.username)
+        elif message.reply_to_message is not None and message.reply_to_message.text is not None:
+            if 'Give me a troll' in message.reply_to_message.text:
+                quote = message.text.strip()
+                db = sqlite3.connect(trolldb)
+                cursor = db.cursor()
+                cursor.execute('''SELECT quote FROM quotes where chatid = ? AND quote == ?''', (message.chat.id, quote))
+                existing = cursor.fetchone()
+                if existing is not None:
+                    bot.reply_to(message, 'Troll allready exists in this group')
+                    return
+                cursor.execute('''INSERT INTO quotes(chatid,username,quote) VALUES(?,?,?)''', (message.chat.id, message.from_user.username, quote))
+                print("Adding Troll to group %s" % message.chat.title)
+                bot.reply_to(message, 'Troll added to your group')
+                db.commit()
+                db.close()
+            elif 'Delete a troll' in message.reply_to_message.text:
+                quote = message.text.strip()
+                db = sqlite3.connect(trolldb)
+                cursor = db.cursor()
+                deleted = cursor.execute('''DELETE FROM quotes WHERE chatid = ? AND username = ? AND quote = ?''', (message.chat.id, message.from_user.username, quote))
+                if deleted.rowcount > 0:
+                    print("Deleted Troll from group %s" % message.chat.title)
+                    markup = telebot.types.ReplyKeyboardHide(selective=True)
+                    bot.reply_to(message, 'Troll deleted from your group', reply_markup=markup)
+                else:
+                    bot.reply_to(message, 'No troll found to delete')
+                db.commit()
+                db.close()
+    except Exception as e:
+        print(e)
 
 
 trolldb = os.path.expanduser("~/troll.db")
