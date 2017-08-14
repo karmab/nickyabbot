@@ -183,6 +183,8 @@ def custom(message):
             bot.reply_to(message, '$deity doesn\'t exist @%s. Sorry...' % message.from_user.username)
         elif 'sales' in message.text.lower() and 'spitzer' in message.text.lower():
             bot.reply_to(message, '@cspitzer is not from sales. He told me last time he invited me to dinner')
+        elif 'satellite' in message.text.lower() and '--' in message.text.lower():
+            bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
         elif message.reply_to_message is not None and message.reply_to_message.text is not None:
             if 'Give me a troll' in message.reply_to_message.text:
                 quote = message.text.strip()
