@@ -179,14 +179,17 @@ def custom(message):
             bot.reply_to(message, 'a chupito for @%s!!!' % message.from_user.username)
         elif 'papichulo' in message.text.lower() and ('minWi' in message.text.lower() or 'eminguez' in message.text.lower()):
             bot.reply_to(message, 'Please stop. @minWi will be a father when he\'s ready')
-        elif '$deity' in message.text.lower():
+        elif '$deity' in message.text.lower() or 'dios' in message.text.lower() or 'god' in message.text.lower():
             bot.reply_to(message, '$deity doesn\'t exist @%s. Sorry...' % message.from_user.username)
         elif 'sales' in message.text.lower() and 'spitzer' in message.text.lower():
             bot.reply_to(message, '@cspitzer is not from sales. He told me last time he invited me to dinner')
-        elif 'satellite--' in message.text.lower() or 'satellite6--' in message.text.lower():
+        elif 'satellite--' in message.text.lower() or 'satellite6--' in message.text.lower() or 'satellite6--' in message.text.lower() or 'sat6--' in message.text.lower():
             bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
         elif 'subscription-manager--' in message.text.lower():
             bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
+        elif 'dragon' in message.text.lower():
+            url = 'https://media.giphy.com/media/9ljido0fjus92/giphy.gif'
+            bot.send_document(message.chat.id, url)
         elif message.reply_to_message is not None and message.reply_to_message.text is not None:
             if 'Give me a troll' in message.reply_to_message.text:
                 quote = message.text.strip()
