@@ -193,6 +193,9 @@ def custom(message):
         elif 'fiesta' in message.text.lower() or 'party' in message.text.lower():
             url = 'https://media.giphy.com/media/QMkPpxPDYY0fu/giphy.gif'
             bot.send_document(message.chat.id, url)
+        elif 'goiko' in message.text.lower() or 'timesburg' in message.text.lower():
+            url = 'https://media.giphy.com/media/3oEdv5S8Th6b9gsNqM/giphy.gif'
+            bot.send_document(message.chat.id, url)
         elif message.reply_to_message is not None and message.reply_to_message.text is not None:
             if 'Give me a troll' in message.reply_to_message.text:
                 quote = message.text.strip()
