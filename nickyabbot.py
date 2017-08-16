@@ -187,8 +187,11 @@ def custom(message):
             bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
         elif 'subscription-manager--' in message.text.lower():
             bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
-        elif 'dragon' in message.text.lower():
+        elif 'dragon' in message.text.lower() or 'daenerys' in message.text.lower():
             url = 'https://media.giphy.com/media/9ljido0fjus92/giphy.gif'
+            bot.send_document(message.chat.id, url)
+        elif 'fiesta' in message.text.lower() or 'party' in message.text.lower():
+            url = 'https://media.giphy.com/media/QMkPpxPDYY0fu/giphy.gif'
             bot.send_document(message.chat.id, url)
         elif message.reply_to_message is not None and message.reply_to_message.text is not None:
             if 'Give me a troll' in message.reply_to_message.text:
