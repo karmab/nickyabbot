@@ -21,6 +21,10 @@ def db_setup(dbfile='troll.db'):
     db.close()
 
 
+def random_gif(key, search):
+    r = requests.get("http://api.giphy.com/v1/gifs/random?tag=%s&api_key=%s" % (search, key))
+    return r.json()['data']['image_url']
+
 if 'TOKEN' not in os.environ:
     print("missing TOKEN.Leaving...")
     os._exit(1)
@@ -192,29 +196,23 @@ def custom(message):
             bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
         elif 'subscription-manager--' in message.text.lower():
             bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
-        elif 'dragon' in message.text.lower() or 'daenerys' in message.text.lower() or 'dracaris' in message.text.lower() or 'dracarys' in message.text.lower():
+        elif 'dragon' in message.text.lower() or 'daenerys' in message.text.lower() or 'dracaris' in message.text.lower() or 'dracarys' in message.text.lower() or 'drakaris' in message.text.lower():
+            search = 'drakarys'
             url = 'https://media.giphy.com/media/9ljido0fjus92/giphy.gif'
-            if giphykey is not None:
-                search = 'dracarys'
-                r = requests.get("http://api.giphy.com/v1/gifs/random?tag=%s&api_key=%s" % (search, giphykey))
-                url = r.json()['data']['image_url']
+            url = random_gif(giphykey, search) if giphykey is not None else url
             bot.send_document(message.chat.id, url)
         elif 'fiesta' in message.text.lower() or 'party' in message.text.lower():
             url = 'https://media.giphy.com/media/QMkPpxPDYY0fu/giphy.gif'
             bot.send_document(message.chat.id, url)
         elif 'goiko' in message.text.lower() or 'timesburg' in message.text.lower() or 'burger' in message.text.lower() or 'hamburguesa' in message.text.lower():
+            search = 'burger'
             url = 'https://media.giphy.com/media/3oEdv5S8Th6b9gsNqM/giphy.gif'
-            if giphykey is not None:
-                search = 'burger'
-                r = requests.get("http://api.giphy.com/v1/gifs/random?tag=%s&api_key=%s" % (search, giphykey))
-                url = r.json()['data']['image_url']
+            url = random_gif(giphykey, search) if giphykey is not None else url
             bot.send_document(message.chat.id, url)
         elif 'systemd' in message.text.lower():
+            search = 'systemd'
             url = 'https://media.giphy.com/media/kmDWuI552Lty8/giphy.gif'
-            if giphykey is not None:
-                search = 'systemd'
-                r = requests.get("http://api.giphy.com/v1/gifs/random?tag=%s&api_key=%s" % (search, giphykey))
-                url = r.json()['data']['image_url']
+            url = random_gif(giphykey, search) if giphykey is not None else url
             bot.send_document(message.chat.id, url)
         elif message.reply_to_message is not None and message.reply_to_message.text is not None:
             if 'Give me a troll' in message.reply_to_message.text:
