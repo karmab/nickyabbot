@@ -188,7 +188,7 @@ def custom(message):
             bot.reply_to(message, 'a chupito for @%s!!!' % message.from_user.username)
         elif 'papichulo' in message.text.lower() and ('minWi' in message.text.lower() or 'eminguez' in message.text.lower()):
             bot.reply_to(message, 'Please stop. @minWi will be a father when he\'s ready')
-        elif '$deity' in message.text.lower() or 'dios' in message.text.lower() or 'god' in message.text.lower():
+        elif '$deity' in message.text.lower() or ' dios ' in message.text.lower() or ' god ' in message.text.lower():
             bot.reply_to(message, '$deity doesn\'t exist @%s. Sorry...' % message.from_user.username)
         elif 'sales' in message.text.lower() and 'spitzer' in message.text.lower():
             bot.reply_to(message, '@cspitzer is not from sales. He told me last time he invited me to dinner')
