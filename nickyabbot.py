@@ -194,6 +194,8 @@ def custom(message):
             bot.reply_to(message, '@cspitzer is not from sales. He told me last time he invited me to dinner')
         elif 'satellite--' in message.text.lower() or 'satellite6--' in message.text.lower() or 'satellite6--' in message.text.lower() or 'sat6--' in message.text.lower():
             bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
+        elif 'retrasad0' in message.text.lower():
+            bot.reply_to(message, 'It spells \'retrasado\' @%s' % message.from_user.username)
         elif 'subscription-manager--' in message.text.lower():
             bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
         elif 'dragon' in message.text.lower() or 'daenerys' in message.text.lower() or 'dracaris' in message.text.lower() or 'dracarys' in message.text.lower() or 'drakaris' in message.text.lower():
