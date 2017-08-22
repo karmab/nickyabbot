@@ -10,6 +10,8 @@ sys.setdefaultencoding('utf-8')
 
 
 def db_setup(dbfile='troll.db'):
+    if not os.path.exist(dbfile):
+        open(dbfile, 'a').close()
     db = sqlite3.connect(dbfile)
     cursor = db.cursor()
     cursor.execute('CREATE TABLE IF NOT EXISTS quotes (chatid int, username text, quote text)')
