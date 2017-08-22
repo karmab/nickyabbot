@@ -250,7 +250,10 @@ def custom(message):
         print(e)
 
 
-trolldb = os.path.expanduser("~/troll.db")
+if os.geteuid() == 0:
+    trolldb = os.path.expanduser("/root/troll.db")
+else:
+    trolldb = os.path.expanduser("~/troll.db")
 db_setup(dbfile=trolldb)
 print("Ready for trolling!")
 bot.polling()
