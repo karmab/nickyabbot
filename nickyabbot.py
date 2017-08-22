@@ -251,7 +251,7 @@ def custom(message):
 
 
 if os.geteuid() == 0:
-    trolldb = os.path.expanduser("/root/troll.db")
+    trolldb = os.path.expanduser("/troll.db")
 else:
     trolldb = os.path.expanduser("~/troll.db")
 db_setup(dbfile=trolldb)
