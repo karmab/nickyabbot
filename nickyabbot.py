@@ -10,7 +10,7 @@ sys.setdefaultencoding('utf-8')
 
 
 def db_setup(dbfile='troll.db'):
-    if not os.path.exist(dbfile):
+    if not os.path.exists(dbfile):
         open(dbfile, 'a').close()
     db = sqlite3.connect(dbfile)
     cursor = db.cursor()
