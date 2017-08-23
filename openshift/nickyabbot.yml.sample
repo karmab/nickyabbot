@@ -57,7 +57,7 @@ items:
             value: giphykey
           resources: {}
           volumeMounts:
-          - mountPath: /root
+          - mountPath: /tmp/troll
             name: troll
         volumes:
         - name: troll
