@@ -9,14 +9,14 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
-def db_setup(dbfile='troll.db'):
-    if not os.path.exists(dbfile):
-        open(dbfile, 'a').close()
-    db = sqlite3.connect(dbfile)
+def db_setup(dbpath='/tmp/troll'):
+    if not os.path.exists(dbpath):
+        os.makedirs(dbpath)
+    db = sqlite3.connect("%s/db" % dbpath)
     cursor = db.cursor()
     cursor.execute('CREATE TABLE IF NOT EXISTS quotes (chatid int, username text, quote text)')
     cursor.execute('DELETE FROM quotes WHERE chatid = 0')
-    with open(os.path.expanduser('/tmp/staticquotes.txt'), 'r') as staticquotes:
+    with open(os.path.expanduser('/staticquotes.txt'), 'r') as staticquotes:
         for line in staticquotes:
             cursor.execute('''INSERT INTO quotes(chatid,username,quote) VALUES(?,?,?)''', (0, 'nickyabbot', line.strip()))
     db.commit()
@@ -35,8 +35,6 @@ giphykey = os.environ.get('GIPHYKEY')
 if giphykey is None:
     print("missing GIPHYKEY. Corresponding features won't be used")
 
-# logger = telebot.logger
-# telebot.logger.setLevel(logging.DEBUG)
 bot = telebot.TeleBot(os.environ['TOKEN'])
 botname = "@%s" % bot.get_me().username
 
@@ -103,26 +101,6 @@ def all(message):
     db.close()
     print("Sending all troll messages to user %s" % message.from_user.username)
     bot.reply_to(message, quotes)
-
-
-@bot.inline_handler(lambda query: len(query.query) > 0)
-def inline_all(query):
-    global trolldb
-    message = query.query
-    db = sqlite3.connect(trolldb)
-    cursor = db.cursor()
-    cursor.execute("SELECT quote FROM quotes WHERE quote like ? AND ( username = ? OR chatid = 0)", ('%' + message + '%', query.from_user.username))
-    fetch = cursor.fetchall()
-    if not fetch:
-        print("No Matching quote found")
-        bot.answer_inline_query(query.id, 'Nothing found')
-        return
-    results = []
-    for index, value in enumerate(fetch):
-        value = value[0]
-        results.append(telebot.types.InlineQueryResultArticle(str(index), value, telebot.types.InputTextMessageContent(value)))
-    print("Sending all troll messages to user %s" % query.from_user.username)
-    bot.answer_inline_query(query.id, results)
 
 
 @bot.message_handler(commands=['trolladd', "trolladd%s" % botname])
@@ -250,7 +228,6 @@ def custom(message):
         print(e)
 
 
-trolldb = os.path.expanduser("/tmp/troll.db")
-db_setup(dbfile=trolldb)
+db_setup(dbpath='/tmp/troll')
 print("Ready for trolling!")
 bot.polling()
