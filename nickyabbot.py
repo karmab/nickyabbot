@@ -250,7 +250,7 @@ def custom(message):
         print(e)
 
 
-trolldb = os.path.expanduser("~/troll.db")
+trolldb = os.path.expanduser("/tmp/troll.db")
 db_setup(dbfile=trolldb)
 print("Ready for trolling!")
 bot.polling()
