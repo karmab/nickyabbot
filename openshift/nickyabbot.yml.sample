@@ -1,0 +1,79 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: nickyabbot
+    name: nickyabbot
+  spec:
+    tags:
+    - annotations:
+        openshift.io/imported-from: karmab/nickyabbot:latest
+      from:
+        kind: DockerImage
+        name: karmab/nickyabbot:latest
+      generation: null
+      importPolicy: {}
+      name: latest
+  status:
+    dockerImageRepository: ""
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: nickyabbot
+    name: nickyabbot
+  spec:
+    replicas: 1
+    selector:
+      app: nickyabbot
+      deploymentconfig: nickyabbot
+    strategy:
+      resources: {}
+    template:
+      metadata:
+        annotations:
+          openshift.io/container.nickyabbot.image.entrypoint: '["python","-u","/nickyabbot.py"]'
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: nickyabbot
+          deploymentconfig: nickyabbot
+      spec:
+        containers:
+        - image: karmab/nickyabbot:latest
+          name: nickyabbot
+          env:
+          - name: TOKEN
+            value: token
+          - name: GIPHYKEY
+            value: giphykey
+          resources: {}
+          volumeMounts:
+          - mountPath: /root
+            name: troll
+        volumes:
+        - name: troll
+          persistentVolumeClaim:
+            claimName: pvctroll
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - nickyabbot
+        from:
+          kind: ImageStreamTag
+          name: nickyabbot:latest
+      type: ImageChange
+  status: {}
+kind: List
+metadata: {}
