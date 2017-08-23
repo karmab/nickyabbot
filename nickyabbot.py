@@ -67,7 +67,7 @@ def help(message):
 
 @bot.message_handler(commands=['troll', "troll%s" % botname])
 def get(message):
-    global trolldb
+    trolldb = '/tmp/troll/db'
     quote = re.sub(r"/troll(%s|)" % botname, '', message.text).strip()
     chatid = message.chat.id if message.chat.title is not None else 0
     db = sqlite3.connect(trolldb)
@@ -90,7 +90,7 @@ def get(message):
 
 @bot.message_handler(commands=['trollall', 'trolllist', "trollall%s" % botname, "trolllist%s" % botname])
 def all(message):
-    global trolldb
+    trolldb = '/tmp/troll/db'
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
     if 'group' in message.chat.type:
@@ -105,7 +105,7 @@ def all(message):
 
 @bot.message_handler(commands=['trolladd', "trolladd%s" % botname])
 def add(message):
-    global trolldb
+    trolldb = '/tmp/troll/db'
     if 'group' not in message.chat.type:
         bot.reply_to(message, 'Trolls can only be added to groups')
         return
@@ -130,7 +130,7 @@ def add(message):
 
 @bot.message_handler(commands=['trolldel', 'trolldelete', "trolldel%s" % botname, "trolldelete%s" % botname])
 def delete(message):
-    global trolldb
+    trolldb = '/tmp/troll/db'
     quote = re.sub(r"/troll(delete|del)(%s|)" % botname, '', message.text).strip()
     if quote == '':
         db = sqlite3.connect(trolldb)
@@ -163,6 +163,7 @@ def delete(message):
 
 @bot.message_handler(func=lambda m: True)
 def custom(message):
+    trolldb = '/tmp/troll/db'
     try:
         if 'transcod' in message.text.lower():
             bot.reply_to(message, 'a chupito for @%s!!!' % message.from_user.username)
