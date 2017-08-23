@@ -16,7 +16,7 @@ def db_setup(dbfile='troll.db'):
     cursor = db.cursor()
     cursor.execute('CREATE TABLE IF NOT EXISTS quotes (chatid int, username text, quote text)')
     cursor.execute('DELETE FROM quotes WHERE chatid = 0')
-    with open(os.path.expanduser('~/staticquotes.txt'), 'r') as staticquotes:
+    with open(os.path.expanduser('/tmp/staticquotes.txt'), 'r') as staticquotes:
         for line in staticquotes:
             cursor.execute('''INSERT INTO quotes(chatid,username,quote) VALUES(?,?,?)''', (0, 'nickyabbot', line.strip()))
     db.commit()
@@ -250,10 +250,7 @@ def custom(message):
         print(e)
 
 
-if os.geteuid() == 0:
-    trolldb = os.path.expanduser("/tmp/troll.db")
-else:
-    trolldb = os.path.expanduser("~/troll.db")
+trolldb = os.path.expanduser("~/troll.db")
 db_setup(dbfile=trolldb)
 print("Ready for trolling!")
 bot.polling()
