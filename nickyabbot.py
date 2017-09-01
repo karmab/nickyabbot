@@ -156,7 +156,6 @@ def trolldelete(message):
 @bot.message_handler(content_types=['photo'])
 @bot.message_handler(content_types=['voice'])
 def custom(message):
-    print message
     trolldb = '/tmp/troll/db'
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
@@ -247,8 +246,9 @@ def custom(message):
             quotekeys = [r[0] for r in cursor.fetchall()]
             words = []
             for t in message.text.lower().split(' '):
-                for c in string.punctuation:
-                    t = t.replace(c, '')
+                if not t.endswith('++' or '--'):
+                    for c in string.punctuation:
+                        t = t.replace(c, '')
                 t = emojis.sub(r'', t)
                 words.append(t)
             cursor.execute('''SELECT level FROM levels where chatid = ?''', (message.chat.id,))
