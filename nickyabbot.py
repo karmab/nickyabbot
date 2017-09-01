@@ -1,8 +1,7 @@
 # import logging
 import sqlite3
 import os
-import re
-import requests
+import random
 import telebot
 import sys
 reload(sys)
@@ -14,209 +13,193 @@ def db_setup(dbpath='/tmp/troll'):
         os.makedirs(dbpath)
     db = sqlite3.connect("%s/db" % dbpath)
     cursor = db.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS quotes (chatid int, username text, quote text)')
-    cursor.execute('DELETE FROM quotes WHERE chatid = 0')
-    with open(os.path.expanduser('/staticquotes.txt'), 'r') as staticquotes:
-        for line in staticquotes:
-            cursor.execute('''INSERT INTO quotes(chatid,username,quote) VALUES(?,?,?)''', (0, 'nickyabbot', line.strip()))
+    cursor.execute('CREATE TABLE IF NOT EXISTS quotes (chatid int, keyword text not null, quote text not null)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS levels (chatid int, level int)')
     db.commit()
     db.close()
 
 
-def random_gif(key, search):
-    r = requests.get("http://api.giphy.com/v1/gifs/random?tag=%s&api_key=%s" % (search, key))
-    return r.json()['data']['image_url']
-
 if 'TOKEN' not in os.environ:
     print("missing TOKEN.Leaving...")
     os._exit(1)
+token = os.environ.get('TOKEN')
 
-giphykey = os.environ.get('GIPHYKEY')
-if giphykey is None:
-    print("missing GIPHYKEY. Corresponding features won't be used")
-
-bot = telebot.TeleBot(os.environ['TOKEN'])
+bot = telebot.TeleBot(token)
+bot.skip_pending = True
 botname = "@%s" % bot.get_me().username
 
 
-@bot.message_handler(commands=['start', "start%s" % botname])
+@bot.message_handler(commands=["start", "start%s" % botname])
 def start(message):
     startmessage = ''' *Welcome to the troll bot*
 
 This bot is designed to ease trolling within your group chats
 
-/troll to get a random troll
-/troll PATTERN to get matching troll
-/trolladd PATTERN to add troll to current group
-/trolldelete PATTERN to delete troll from current group
+/trolladd add troll to current group
+/trolldelete delete troll from current group
+/trolllevel show randomness
+/trolllist list all the trolls from current group
+/trollset ajust randomness
+/help this help
 '''
     bot.reply_to(message, startmessage, parse_mode='Markdown')
 
 
-@bot.message_handler(commands=['trollhelp', 'help', "help%s" % botname])
+@bot.message_handler(commands=["help", "help%s" % botname])
 def help(message):
     helpmessage = '''Those are the commands available:
-/troll - Displays random or matching troll
-/trolladd - Adds indicated troll
-/trolldelete - Deletes given troll
-/trolllist - Lists all trolls
-/trollhelp - This help
+/trolladd add troll to current group
+/trolldelete delete troll from current group
+/trolllevel show randomness
+/trolllist list all the trolls from current group
+/trollset ajust randomness
+/help this help
 '''
     bot.reply_to(message, helpmessage)
 
 
-@bot.message_handler(commands=['troll', "troll%s" % botname])
-def get(message):
-    trolldb = '/tmp/troll/db'
-    quote = re.sub(r"/troll(%s|)" % botname, '', message.text).strip()
-    chatid = message.chat.id if message.chat.title is not None else 0
-    db = sqlite3.connect(trolldb)
-    cursor = db.cursor()
-    if quote == '':
-        cursor.execute('''SELECT quote FROM quotes WHERE chatid = ? OR chatid = 0 ORDER BY RANDOM() LIMIT 1''', (chatid,))
-        fetch = cursor.fetchone()
-    else:
-        cursor.execute("SELECT quote FROM quotes WHERE quote like ? AND (chatid = ? OR chatid = 0) ORDER BY RANDOM() LIMIT 1", ('%' + quote + '%', chatid,))
-        fetch = cursor.fetchone()
-        if fetch is None:
-            print("No Matching quote found")
-            bot.reply_to(message, 'No Matching quote found')
-            return
-    quote = fetch[0]
-    db.close()
-    print("Sending troll message to user %s" % message.from_user.username)
-    bot.reply_to(message, quote)
+@bot.message_handler(commands=["trollset", "trollset%s" % botname])
+def trollset(message):
+    if 'group' not in message.chat.type:
+        bot.reply_to(message, 'Troll settings only apply to groups')
+        return
+    markup = telebot.types.ReplyKeyboardMarkup(row_width=1, selective=True)
+    for entry in range(0, 6):
+        markup.add(telebot.types.KeyboardButton(str(entry)))
+    bot.send_message(message.chat.id, "Allright @%s. Pick level of activity" % message.from_user.username, reply_markup=markup)
+    return
 
 
-@bot.message_handler(commands=['trollall', 'trolllist', "trollall%s" % botname, "trolllist%s" % botname])
-def all(message):
+@bot.message_handler(commands=["trolllevel", "trolllevel%s" % botname])
+def trolllevel(message):
     trolldb = '/tmp/troll/db'
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
     if 'group' in message.chat.type:
-        cursor.execute('SELECT quote FROM quotes where chatid = ? or chatid = 0', (message.chat.id,))
-    else:
-        cursor.execute('SELECT quote FROM quotes where chatid = 0')
-    quotes = '\n'.join([q[0] for q in cursor.fetchall()])
+        cursor.execute('SELECT level FROM levels where chatid = ?', (message.chat.id,))
+    result = cursor.fetchone()
+    level = int(result[0]) if result is not None else LEVEL
+    db.close()
+    print("Sending troll level to user %s" % message.from_user.username)
+    bot.reply_to(message, "Troll level of this group is %s/5" % level)
+
+
+@bot.message_handler(commands=["trolllist", "trolllist%s" % botname])
+def trolllist(message):
+    trolldb = '/tmp/troll/db'
+    db = sqlite3.connect(trolldb)
+    cursor = db.cursor()
+    if 'group' not in message.chat.type:
+        bot.reply_to(message, "No quotes available outside of groups")
+        return
+    cursor.execute('SELECT keyword,quote FROM quotes where chatid = ? ORDER BY keyword', (message.chat.id,))
+    results = cursor.fetchall()
     db.close()
     print("Sending all troll messages to user %s" % message.from_user.username)
-    bot.reply_to(message, quotes)
+    if not results:
+        bot.reply_to(message, "No quotes found")
+    else:
+        quotes = ''
+        for q in results:
+            keyword, quote = q[0], q[1]
+            if len(quote) == 31:
+                quote = 'FOTO/STICKER'
+            quotes = '%s%s -> %s\n' % (quotes, keyword, quote)
+        bot.reply_to(message, quotes)
 
 
-@bot.message_handler(commands=['trolladd', "trolladd%s" % botname])
-def add(message):
-    trolldb = '/tmp/troll/db'
+@bot.message_handler(commands=["trolladd", "trolladd%s" % botname])
+def trolladd(message):
     if 'group' not in message.chat.type:
         bot.reply_to(message, 'Trolls can only be added to groups')
         return
-    quote = re.sub(r"/trolladd(%s|)" % botname, '', message.text).strip()
-    if quote == '':
-        bot.send_message(message.chat.id, "Allright @%s. Give me a troll" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
-        return
-    quote = quote.strip()
-    db = sqlite3.connect(trolldb)
-    cursor = db.cursor()
-    cursor.execute('''SELECT quote FROM quotes where chatid = ? AND quote == ?''', (message.chat.id, quote))
-    existing = cursor.fetchone()
-    if existing is not None:
-        bot.reply_to(message, 'Troll allready exists in this group')
-        return
-    cursor.execute('''INSERT INTO quotes(chatid,username,quote) VALUES(?,?,?)''', (message.chat.id, message.from_user.username, quote))
-    print("Adding Troll message to group %s" % message.chat.title)
-    bot.reply_to(message, 'Troll added to your group')
-    db.commit()
-    db.close()
+    bot.send_message(message.chat.id, "Allright @%s. Give me a keyword" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
+    return
 
 
-@bot.message_handler(commands=['trolldel', 'trolldelete', "trolldel%s" % botname, "trolldelete%s" % botname])
-def delete(message):
+@bot.message_handler(commands=["trolldelete", "trolldelete%s" % botname])
+def trolldelete(message):
     trolldb = '/tmp/troll/db'
-    quote = re.sub(r"/troll(delete|del)(%s|)" % botname, '', message.text).strip()
-    if quote == '':
-        db = sqlite3.connect(trolldb)
-        cursor = db.cursor()
-        cursor.execute('''SELECT quote FROM quotes where chatid = ? and username = ?''', (message.chat.id, message.from_user.username))
-        existing = cursor.fetchall()
-        if not existing:
-            bot.reply_to(message, 'No trolls for you to delete')
-        else:
-            markup = telebot.types.ReplyKeyboardMarkup(row_width=1, selective=True)
-            for entry in existing:
-                markup.add(telebot.types.KeyboardButton(entry[0]))
-            bot.send_message(message.chat.id, "Allright @%s. Delete a troll" % message.from_user.username, reply_markup=markup)
-        return
     if 'group' not in message.chat.type:
         bot.reply_to(message, 'Trolls can only be deleted from groups')
         return
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
-    deleted = cursor.execute('''DELETE FROM QUOTES WHERE chatid = ? and  username = ? and quote = ?''', (message.chat.id, message.from_user.username, quote))
-    if deleted.rowcount > 0:
-        print("Deleted Troll message from group %s" % message.chat.title)
-        bot.reply_to(message, 'Troll deleted from your group')
-    else:
-        print("No Troll message deleted from group %s" % message.chat.title)
-        bot.reply_to(message, 'No Troll found for you to delete')
-    db.commit()
+    cursor.execute('''SELECT keyword,quote FROM quotes where chatid = ?''', (message.chat.id,))
+    existing = cursor.fetchall()
     db.close()
+    if not existing:
+        bot.reply_to(message, 'No trolls for you to delete')
+    else:
+        markup = telebot.types.ReplyKeyboardMarkup(row_width=1, selective=True)
+        for entry in existing:
+            markup.add(telebot.types.KeyboardButton("%s -> %s" % (entry[0], entry[1])))
+        bot.send_message(message.chat.id, "Allright @%s. Delete a troll" % message.from_user.username, reply_markup=markup)
+    return
 
 
 @bot.message_handler(func=lambda m: True)
+@bot.message_handler(content_types=['sticker'])
+@bot.message_handler(content_types=['document'])
 def custom(message):
     trolldb = '/tmp/troll/db'
+    db = sqlite3.connect(trolldb)
+    cursor = db.cursor()
     try:
-        if 'transcod' in message.text.lower():
-            bot.reply_to(message, 'a chupito for @%s!!!' % message.from_user.username)
-        elif 'papichulo' in message.text.lower() and ('minWi' in message.text.lower() or 'eminguez' in message.text.lower()):
-            bot.reply_to(message, 'Please stop. @minWi will be a father when he\'s ready')
-        elif '$deity' in message.text.lower() or ' dios' in message.text.lower() or ' god' in message.text.lower():
-            bot.reply_to(message, '$deity doesn\'t exist @%s. Sorry...' % message.from_user.username)
-        elif 'sales' in message.text.lower() and 'spitzer' in message.text.lower():
-            bot.reply_to(message, '@cspitzer is not from sales. He told me last time he invited me to dinner')
-        elif 'satellite--' in message.text.lower() or 'satellite6--' in message.text.lower() or 'satellite6--' in message.text.lower() or 'sat6--' in message.text.lower():
-            bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
-        elif 'retrasad0' in message.text.lower():
-            bot.reply_to(message, 'It spells \'retrasado\' @%s' % message.from_user.username)
-        elif 'subscription-manager--' in message.text.lower():
-            bot.reply_to(message, 'Agree with you my lord @%s' % message.from_user.username)
-        elif 'dragon' in message.text.lower() or 'daenerys' in message.text.lower() or 'dracaris' in message.text.lower() or 'dracarys' in message.text.lower() or 'drakaris' in message.text.lower():
-            search = 'drakarys'
-            url = 'https://media.giphy.com/media/9ljido0fjus92/giphy.gif'
-            url = random_gif(giphykey, search) if giphykey is not None else url
-            bot.send_document(message.chat.id, url)
-        elif 'fiesta' in message.text.lower() or 'party' in message.text.lower():
-            url = 'https://media.giphy.com/media/QMkPpxPDYY0fu/giphy.gif'
-            bot.send_document(message.chat.id, url)
-        elif 'goiko' in message.text.lower() or 'timesburg' in message.text.lower() or 'burger' in message.text.lower() or 'hamburguesa' in message.text.lower():
-            search = 'burger'
-            url = 'https://media.giphy.com/media/3oEdv5S8Th6b9gsNqM/giphy.gif'
-            url = random_gif(giphykey, search) if giphykey is not None else url
-            bot.send_document(message.chat.id, url)
-        elif 'systemd' in message.text.lower():
-            search = 'systemd'
-            url = 'https://media.giphy.com/media/kmDWuI552Lty8/giphy.gif'
-            url = random_gif(giphykey, search) if giphykey is not None else url
-            bot.send_document(message.chat.id, url)
-        elif message.reply_to_message is not None and message.reply_to_message.text is not None:
-            if 'Give me a troll' in message.reply_to_message.text:
-                quote = message.text.strip()
+        if message.reply_to_message is not None and message.reply_to_message.text is not None:
+            if 'Pick level of activity' in message.reply_to_message.text:
+                level = int(message.text.strip())
                 db = sqlite3.connect(trolldb)
                 cursor = db.cursor()
-                cursor.execute('''SELECT quote FROM quotes where chatid = ? AND quote == ?''', (message.chat.id, quote))
-                existing = cursor.fetchone()
-                if existing is not None:
-                    bot.reply_to(message, 'Troll allready exists in this group')
-                    return
-                cursor.execute('''INSERT INTO quotes(chatid,username,quote) VALUES(?,?,?)''', (message.chat.id, message.from_user.username, quote))
-                print("Adding Troll to group %s" % message.chat.title)
-                bot.reply_to(message, 'Troll added to your group')
+                cursor.execute('''DELETE FROM levels where chatid = ?''', (message.chat.id,))
+                cursor.execute('''INSERT INTO levels(chatid,level) VALUES(?,?)''', (message.chat.id, level))
+                print("Troll level set for group %s" % message.chat.title)
+                markup = telebot.types.ReplyKeyboardHide(selective=True)
+                bot.reply_to(message, 'Troll level set for your group', reply_markup=markup)
                 db.commit()
                 db.close()
-            elif 'Delete a troll' in message.reply_to_message.text:
-                quote = message.text.strip()
+            elif 'Give me a troll' in message.reply_to_message.text:
+                keyword = keywords[message.from_user.username]
+                if message.text is not None:
+                    quote = message.text.strip()
+                elif message.sticker is not None:
+                    quote = message.sticker.file_id
+                elif message.document is not None:
+                    quote = message.document.file_id
+                else:
+                    print("Invalid format for this quote")
+                    bot.reply_to(message, 'Invalid format for this quote')
+                    return
                 db = sqlite3.connect(trolldb)
                 cursor = db.cursor()
-                deleted = cursor.execute('''DELETE FROM quotes WHERE chatid = ? AND username = ? AND quote = ?''', (message.chat.id, message.from_user.username, quote))
+                cursor.execute('''SELECT quote FROM quotes where chatid = ? AND quote = ? AND keyword = ?''', (message.chat.id, quote, keyword))
+                results = cursor.fetchall()
+                if results:
+                    print("Quote already exists for this keyword")
+                    bot.reply_to(message, 'Quote already exists for this keyword')
+                else:
+                    cursor.execute('''INSERT INTO quotes(chatid,keyword,quote) VALUES(?,?,?)''', (message.chat.id, keyword, quote))
+                    print("Adding Troll to group %s" % message.chat.title)
+                    bot.reply_to(message, 'Troll added to your group')
+                db.commit()
+                db.close()
+            elif 'Give me a keyword' in message.reply_to_message.text:
+                text = message.text
+                if text is None:
+                    bot.send_message(message.chat.id, "Wrong @%s. I needed a single word" % message.from_user.username)
+                    return
+                keyword = text.strip()
+                if len(keyword.split(' ')) > 1 or len(keyword) == 1:
+                    bot.send_message(message.chat.id, "Wrong @%s. I needed a single word" % message.from_user.username)
+                else:
+                    keywords[message.from_user.username] = keyword
+                    bot.send_message(message.chat.id, "Allright @%s. Give me a troll" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
+            elif 'Delete a troll' in message.reply_to_message.text:
+                keyword = message.text.strip().split('->')[0].strip()
+                quote = message.text.strip().split('->')[1].strip()
+                db = sqlite3.connect(trolldb)
+                cursor = db.cursor()
+                deleted = cursor.execute('''DELETE FROM quotes WHERE chatid = ? AND keyword = ? AND quote = ?''', (message.chat.id, keyword, quote))
                 if deleted.rowcount > 0:
                     print("Deleted Troll from group %s" % message.chat.title)
                     markup = telebot.types.ReplyKeyboardHide(selective=True)
@@ -225,10 +208,38 @@ def custom(message):
                     bot.reply_to(message, 'No troll found to delete')
                 db.commit()
                 db.close()
+        elif message.text is None:
+            return
+        else:
+            cursor.execute('''SELECT keyword FROM quotes where chatid = ?''', (message.chat.id,))
+            quotekeys = [r[0] for r in cursor.fetchall()]
+            words = message.text.lower().split(' ')
+            cursor.execute('''SELECT level FROM levels where chatid = ?''', (message.chat.id,))
+            result = cursor.fetchone()
+            level = int(result[0]) if result is not None else LEVEL
+            if random.randint(1, 5) not in range(1, level + 1) or level == 0:
+                print("NOT HIT")
+                return
+            for word in words:
+                if word in quotekeys:
+                    cursor.execute('''SELECT quote FROM quotes where chatid = ? AND keyword = ? ORDER BY RANDOM() LIMIT 1''', (message.chat.id, word))
+                    quote = cursor.fetchone()
+                    if len(quote[0].split(' ')) == 1 and len(quote[0].split(' ')[0]) == 31:
+                        fileid = quote[0].split(' ')[0]
+                        try:
+                            bot.send_sticker(message.chat.id, fileid)
+                        except:
+                            bot.send_document(message.chat.id, fileid)
+                    else:
+                        bot.reply_to(message, quote)
+                    break
+            db.close()
     except Exception as e:
         print(e)
 
 
 db_setup(dbpath='/tmp/troll')
 print("Ready for trolling!")
+LEVEL = 3
+keywords = {}
 bot.polling()
