@@ -8,12 +8,11 @@ Telegram Troll Bot
 ## Requisites
 
 - tekegram api token
-- giphy api key
 
 Then i use 
 
 ```
-docker run --name=trollbot -v ~/troll:/tmp/troll -e TOKEN=$TOKEN -e GIPHYKEY=$GIPHYKEY -d  karmab/nickyabbot
+docker run --name=trollbot -v ~/troll:/tmp/troll -e TOKEN=$TOKEN -d  karmab/nickyabbot
 ```
 
 ## TODO
