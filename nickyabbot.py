@@ -124,7 +124,7 @@ def trolladd(message):
     if 'group' not in message.chat.type:
         bot.reply_to(message, 'Trolls can only be added to groups')
         return
-    bot.send_message(message.chat.id, "Allright @%s. Give me a keyword" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
+    bot.send_message(message.chat.id, "Allright @%s. Give me a keyword. Put $ at the end for a rhyme" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
     return
 
 
