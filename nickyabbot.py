@@ -111,12 +111,8 @@ def trolllist(message):
         quotes = ''
         for q in results:
             keyword, quote = q[0], q[1]
-            if len(quote) == 31:
-                quote = 'STICKER/GIF'
-            if len(quote) == 32:
-                quote = 'VOICE'
-            elif len(quote) == 56:
-                quote = 'FOTO/AUDIO'
+            if len(quote.split(' ')) == 1 and len(quote) >= 31:
+                quote = 'MEDIA'
             quotes = '%s%s -> %s\n' % (quotes, keyword, quote)
         bot.reply_to(message, quotes)
 
@@ -259,18 +255,14 @@ def custom(message):
             if random.randint(1, 5) not in range(1, level + 1) or level == 0:
                 print("NOT HIT")
                 return
-            lastword = "%s$" % words[-1]
-            if lastword in quotekeys:
-                cursor.execute('''SELECT quote FROM quotes where chatid = ? AND keyword = ? ORDER BY RANDOM() LIMIT 1''', (message.chat.id, lastword))
-                quote = cursor.fetchone()
-                bot.reply_to(message, quote)
-                return
-            for word in words:
-                if word in quotekeys:
+            for index, word in enumerate(words):
+                if index == len(words) - 1 and "%s$" % word in quotekeys:
+                    word = "%s$" % word
+                if word.strip() in quotekeys:
                     cursor.execute('''SELECT quote FROM quotes where chatid = ? AND keyword = ? ORDER BY RANDOM() LIMIT 1''', (message.chat.id, word))
                     quote = cursor.fetchone()
-                    if len(quote[0].split(' ')) == 1 and len(quote[0].split(' ')[0]) == 31:
-                        fileid = quote[0].split(' ')[0]
+                    if len(quote[0].split(' ')) == 1:
+                        fileid = quote[0]
                         try:
                             bot.send_sticker(message.chat.id, fileid)
                         except:
@@ -280,10 +272,10 @@ def custom(message):
                                 try:
                                     bot.send_audio(message.chat.id, fileid)
                                 except:
-                                    bot.send_voice(message.chat.id, fileid)
-                    elif len(quote[0].split(' ')) == 1 and len(quote[0].split(' ')[0]) == 56:
-                        fileid = quote[0].split(' ')[0]
-                        bot.send_photo(message.chat.id, fileid)
+                                    try:
+                                        bot.send_voice(message.chat.id, fileid)
+                                    except:
+                                        bot.send_photo(message.chat.id, fileid)
                     else:
                         bot.reply_to(message, quote)
                     break
