@@ -1,11 +1,20 @@
 # import logging
 import sqlite3
 import os
+import re
 import random
+import string
 import telebot
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
+
+emojis = re.compile(u"(\ud83d[\ude00-\ude4f])|"  # emoticons
+                    u"(\ud83c[\udf00-\uffff])|"  # symbols & pictographs (1 of 2)
+                    u"(\ud83d[\u0000-\uddff])|"  # symbols & pictographs (2 of 2)
+                    u"(\ud83d[\ude80-\udeff])|"  # transport & map symbols
+                    u"(\ud83c[\udde0-\uddff])"  # flags (iOS)
+                    "+", flags=re.UNICODE)
 
 
 def db_setup(dbpath='/tmp/troll'):
@@ -103,7 +112,9 @@ def trolllist(message):
         for q in results:
             keyword, quote = q[0], q[1]
             if len(quote) == 31:
-                quote = 'FOTO/STICKER'
+                quote = 'STICKER/GIF'
+            elif len(quote) == 56:
+                quote = 'FOTO/AUDIO'
             quotes = '%s%s -> %s\n' % (quotes, keyword, quote)
         bot.reply_to(message, quotes)
 
@@ -141,6 +152,8 @@ def trolldelete(message):
 @bot.message_handler(func=lambda m: True)
 @bot.message_handler(content_types=['sticker'])
 @bot.message_handler(content_types=['document'])
+@bot.message_handler(content_types=['audio'])
+@bot.message_handler(content_types=['photo'])
 def custom(message):
     trolldb = '/tmp/troll/db'
     db = sqlite3.connect(trolldb)
@@ -162,13 +175,23 @@ def custom(message):
                 keyword = keywords[message.from_user.username]
                 if message.text is not None:
                     quote = message.text.strip()
+                    if keyword[-1] == '$' and (len(quote) < 4 or quote[-4:] != keyword[-5:-1]):
+                        markup = telebot.types.ReplyKeyboardHide(selective=True)
+                        print("Invalid format for this rhyme")
+                        bot.reply_to(message, 'Invalid format for this rhyme', reply_markup=markup)
+                        return
                 elif message.sticker is not None:
                     quote = message.sticker.file_id
                 elif message.document is not None:
                     quote = message.document.file_id
+                elif message.photo is not None:
+                    quote = message.photo[0].file_id
+                elif message.audio is not None:
+                    quote = message.audio[0].file_id
                 else:
                     print("Invalid format for this quote")
-                    bot.reply_to(message, 'Invalid format for this quote')
+                    markup = telebot.types.ReplyKeyboardHide(selective=True)
+                    bot.reply_to(message, 'Invalid format for this quote', reply_markyup=markup)
                     return
                 db = sqlite3.connect(trolldb)
                 cursor = db.cursor()
@@ -189,10 +212,15 @@ def custom(message):
                     bot.send_message(message.chat.id, "Wrong @%s. I needed a single word" % message.from_user.username)
                     return
                 keyword = text.strip()
-                if len(keyword.split(' ')) > 1 or len(keyword) == 1:
+                if len(text.strip().split(' ')) > 1 or len(text.strip()) == 1:
                     bot.send_message(message.chat.id, "Wrong @%s. I needed a single word" % message.from_user.username)
+                elif text[-1] == '$' and len(text) < 5:
+                    bot.send_message(message.chat.id, "Wrong @%s. You need at least 5 characters for a rhyme" % message.from_user.username)
                 else:
-                    keywords[message.from_user.username] = keyword
+                    if text[-1] == '$':
+                        keywords[message.from_user.username] = text
+                    else:
+                        keywords[message.from_user.username] = text.strip()
                     bot.send_message(message.chat.id, "Allright @%s. Give me a troll" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
             elif 'Delete a troll' in message.reply_to_message.text:
                 keyword = message.text.strip().split('->')[0].strip()
@@ -213,12 +241,23 @@ def custom(message):
         else:
             cursor.execute('''SELECT keyword FROM quotes where chatid = ?''', (message.chat.id,))
             quotekeys = [r[0] for r in cursor.fetchall()]
-            words = message.text.lower().split(' ')
+            words = []
+            for t in message.text.lower().split(' '):
+                for c in string.punctuation:
+                    t = t.replace(c, '')
+                t = emojis.sub(r'', t)
+                words.append(t)
             cursor.execute('''SELECT level FROM levels where chatid = ?''', (message.chat.id,))
             result = cursor.fetchone()
             level = int(result[0]) if result is not None else LEVEL
             if random.randint(1, 5) not in range(1, level + 1) or level == 0:
                 print("NOT HIT")
+                return
+            lastword = "%s$" % words[-1]
+            if lastword in quotekeys:
+                cursor.execute('''SELECT quote FROM quotes where chatid = ? AND keyword = ? ORDER BY RANDOM() LIMIT 1''', (message.chat.id, lastword))
+                quote = cursor.fetchone()
+                bot.reply_to(message, quote)
                 return
             for word in words:
                 if word in quotekeys:
@@ -230,6 +269,12 @@ def custom(message):
                             bot.send_sticker(message.chat.id, fileid)
                         except:
                             bot.send_document(message.chat.id, fileid)
+                    elif len(quote[0].split(' ')) == 1 and len(quote[0].split(' ')[0]) == 56:
+                        fileid = quote[0].split(' ')[0]
+                        try:
+                            bot.send_photo(message.chat.id, fileid)
+                        except:
+                            bot.send_voice(message.chat.id, fileid)
                     else:
                         bot.reply_to(message, quote)
                     break
