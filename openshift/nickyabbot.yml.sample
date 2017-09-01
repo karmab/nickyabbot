@@ -53,8 +53,6 @@ items:
           env:
           - name: TOKEN
             value: token
-          - name: GIPHYKEY
-            value: giphykey
           resources: {}
           volumeMounts:
           - mountPath: /tmp/troll
