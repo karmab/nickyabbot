@@ -277,13 +277,13 @@ def custom(message):
                             try:
                                 bot.send_document(message.chat.id, fileid)
                             except:
-                                bot.send_audio(message.chat.id, fileid)
+                                try:
+                                    bot.send_audio(message.chat.id, fileid)
+                                except:
+                                    bot.send_voice(message.chat.id, fileid)
                     elif len(quote[0].split(' ')) == 1 and len(quote[0].split(' ')[0]) == 56:
                         fileid = quote[0].split(' ')[0]
                         bot.send_photo(message.chat.id, fileid)
-                    elif len(quote[0].split(' ')) == 1 and len(quote[0].split(' ')[0]) == 32:
-                        fileid = quote[0].split(' ')[0]
-                        bot.send_voice(message.chat.id, fileid)
                     else:
                         bot.reply_to(message, quote)
                     break
