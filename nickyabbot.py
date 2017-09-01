@@ -113,6 +113,8 @@ def trolllist(message):
             keyword, quote = q[0], q[1]
             if len(quote) == 31:
                 quote = 'STICKER/GIF'
+            if len(quote) == 32:
+                quote = 'VOICE'
             elif len(quote) == 56:
                 quote = 'FOTO/AUDIO'
             quotes = '%s%s -> %s\n' % (quotes, keyword, quote)
@@ -188,13 +190,13 @@ def custom(message):
                 elif message.photo is not None:
                     quote = message.photo[0].file_id
                 elif message.audio is not None:
-                    quote = message.audio[0].file_id
-                elif message.audio is not None:
-                    quote = message.voice[0].file_id
+                    quote = message.audio.file_id
+                elif message.voice is not None:
+                    quote = message.voice.file_id
                 else:
                     print("Invalid format for this quote")
                     markup = telebot.types.ReplyKeyboardHide(selective=True)
-                    bot.reply_to(message, 'Invalid format for this quote', reply_markyup=markup)
+                    bot.reply_to(message, 'Invalid format for this quote', reply_markup=markup)
                     return
                 db = sqlite3.connect(trolldb)
                 cursor = db.cursor()
@@ -275,13 +277,13 @@ def custom(message):
                             try:
                                 bot.send_document(message.chat.id, fileid)
                             except:
-                                try:
-                                    bot.send_audio(message.chat.id, fileid)
-                                except:
-                                    bot.send_voice(message.chat.id, fileid)
+                                bot.send_audio(message.chat.id, fileid)
                     elif len(quote[0].split(' ')) == 1 and len(quote[0].split(' ')[0]) == 56:
                         fileid = quote[0].split(' ')[0]
                         bot.send_photo(message.chat.id, fileid)
+                    elif len(quote[0].split(' ')) == 1 and len(quote[0].split(' ')[0]) == 32:
+                        fileid = quote[0].split(' ')[0]
+                        bot.send_voice(message.chat.id, fileid)
                     else:
                         bot.reply_to(message, quote)
                     break
