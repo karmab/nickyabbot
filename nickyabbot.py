@@ -154,7 +154,9 @@ def trolldelete(message):
 @bot.message_handler(content_types=['document'])
 @bot.message_handler(content_types=['audio'])
 @bot.message_handler(content_types=['photo'])
+@bot.message_handler(content_types=['voice'])
 def custom(message):
+    print message
     trolldb = '/tmp/troll/db'
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
@@ -188,6 +190,8 @@ def custom(message):
                     quote = message.photo[0].file_id
                 elif message.audio is not None:
                     quote = message.audio[0].file_id
+                elif message.audio is not None:
+                    quote = message.voice[0].file_id
                 else:
                     print("Invalid format for this quote")
                     markup = telebot.types.ReplyKeyboardHide(selective=True)
@@ -268,13 +272,16 @@ def custom(message):
                         try:
                             bot.send_sticker(message.chat.id, fileid)
                         except:
-                            bot.send_document(message.chat.id, fileid)
+                            try:
+                                bot.send_document(message.chat.id, fileid)
+                            except:
+                                try:
+                                    bot.send_audio(message.chat.id, fileid)
+                                except:
+                                    bot.send_voice(message.chat.id, fileid)
                     elif len(quote[0].split(' ')) == 1 and len(quote[0].split(' ')[0]) == 56:
                         fileid = quote[0].split(' ')[0]
-                        try:
-                            bot.send_photo(message.chat.id, fileid)
-                        except:
-                            bot.send_voice(message.chat.id, fileid)
+                        bot.send_photo(message.chat.id, fileid)
                     else:
                         bot.reply_to(message, quote)
                     break
