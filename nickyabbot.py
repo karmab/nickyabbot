@@ -219,9 +219,9 @@ def custom(message):
                     bot.send_message(message.chat.id, "Wrong @%s. You need at least 5 characters for a rhyme" % message.from_user.username)
                 else:
                     if text[-1] == '$':
-                        keywords[message.from_user.username] = text
+                        keywords[message.from_user.username] = text.lower()
                     else:
-                        keywords[message.from_user.username] = text.strip()
+                        keywords[message.from_user.username] = text.strip().lower()
                     bot.send_message(message.chat.id, "Allright @%s. Give me a troll" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
             elif 'Delete a troll' in message.reply_to_message.text:
                 keyword = message.text.strip().split('->')[0].strip()
@@ -258,7 +258,7 @@ def custom(message):
             for index, word in enumerate(words):
                 if index == len(words) - 1 and "%s$" % word in quotekeys:
                     word = "%s$" % word
-                if word.strip() in quotekeys:
+                if word.strip().lower() in quotekeys:
                     cursor.execute('''SELECT quote FROM quotes where chatid = ? AND keyword = ? ORDER BY RANDOM() LIMIT 1''', (message.chat.id, word))
                     quote = cursor.fetchone()
                     if len(quote[0].split(' ')) == 1:
