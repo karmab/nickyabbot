@@ -146,7 +146,7 @@ def trolldelete(message):
         return
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
-    cursor.execute('''SELECT keyword,quote FROM quotes where chatid = ?''', (message.chat.id,))
+    cursor.execute('''SELECT keyword,quote FROM quotes where chatid = ? ORDER BY keyword''', (message.chat.id,))
     existing = cursor.fetchall()
     db.close()
     if not existing:
@@ -169,7 +169,6 @@ def custom(message):
     trolldb = '/tmp/troll/db'
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
-    print message
     try:
         if message.reply_to_message is not None and message.reply_to_message.text is not None:
             if 'Pick level of activity' in message.reply_to_message.text:
@@ -235,7 +234,7 @@ def custom(message):
                         keywords[message.from_user.username] = text.lower()
                     else:
                         keywords[message.from_user.username] = text.strip().lower()
-                    bot.send_message(message.chat.id, "Allright @%s. Give me a troll" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
+                    bot.send_message(message.chat.id, "Allright @%s. Give me a troll. you can also use randomgif or randomgif KEYWORD" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
             elif 'Delete a troll' in message.reply_to_message.text:
                 keyword = message.text.strip().split('->')[0].strip()
                 quote = message.text.strip().split('->')[1].strip()
@@ -274,11 +273,12 @@ def custom(message):
                 if word.strip().lower() in quotekeys:
                     cursor.execute('''SELECT quote FROM quotes where chatid = ? AND keyword = ? ORDER BY RANDOM() LIMIT 1''', (message.chat.id, word))
                     quote = cursor.fetchone()
-                    if quote.lower() == 'randomgif':
-                        url = random_gif(giphykey, word)
+                    if 'randomgif' in quote[0].lower():
+                        search = quote[0].split(' ')[1] if len(quote[0].split(' ')) == 2 else word
+                        url = random_gif(giphykey, search)
                         if url is not None:
                             bot.send_document(message.chat.id, url)
-                    if len(quote[0].split(' ')) == 1:
+                    elif len(quote[0].split(' ')) == 1:
                         fileid = quote[0]
                         try:
                             bot.send_sticker(message.chat.id, fileid)
