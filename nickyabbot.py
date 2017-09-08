@@ -3,6 +3,7 @@ import sqlite3
 import os
 import re
 import random
+import requests
 import string
 import telebot
 import sys
@@ -28,10 +29,21 @@ def db_setup(dbpath='/tmp/troll'):
     db.close()
 
 
+def random_gif(key, search):
+    r = requests.get("http://api.giphy.com/v1/gifs/random?tag=%s&api_key=%s" % (search, key))
+    if 'data' in r.json():
+        return r.json()['data']['image_url']
+
+
 if 'TOKEN' not in os.environ:
     print("missing TOKEN.Leaving...")
     os._exit(1)
 token = os.environ.get('TOKEN')
+
+if 'GIPHYKEY' not in os.environ:
+    print("missing GIPHYKEY.Leaving...")
+    os._exit(1)
+giphykey = os.environ.get('GIPHYKEY')
 
 bot = telebot.TeleBot(token)
 bot.skip_pending = True
@@ -111,7 +123,7 @@ def trolllist(message):
         quotes = ''
         for q in results:
             keyword, quote = q[0], q[1]
-            if len(quote.split(' ')) == 1 and len(quote) >= 31:
+            if len(quote.split(' ')) == 1 and len(quote) >= 30:
                 quote = 'MEDIA'
             quotes = '%s%s -> %s\n' % (quotes, keyword, quote)
         bot.reply_to(message, quotes)
@@ -157,6 +169,7 @@ def custom(message):
     trolldb = '/tmp/troll/db'
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
+    print message
     try:
         if message.reply_to_message is not None and message.reply_to_message.text is not None:
             if 'Pick level of activity' in message.reply_to_message.text:
@@ -261,6 +274,10 @@ def custom(message):
                 if word.strip().lower() in quotekeys:
                     cursor.execute('''SELECT quote FROM quotes where chatid = ? AND keyword = ? ORDER BY RANDOM() LIMIT 1''', (message.chat.id, word))
                     quote = cursor.fetchone()
+                    if quote.lower() == 'randomgif':
+                        url = random_gif(giphykey, word)
+                        if url is not None:
+                            bot.send_document(message.chat.id, url)
                     if len(quote[0].split(' ')) == 1:
                         fileid = quote[0]
                         try:
