@@ -1,5 +1,7 @@
 # import logging
 import sqlite3
+from random import choice
+from string import ascii_uppercase
 import os
 import re
 import random
@@ -21,9 +23,12 @@ emojis = re.compile(u"(\ud83d[\ude00-\ude4f])|"  # emoticons
 def db_setup(dbpath='/tmp/troll'):
     if not os.path.exists(dbpath):
         os.makedirs(dbpath)
+    if not os.path.exists("%s/thumbs" % dbpath):
+        os.makedirs("%s/thumbs" % dbpath)
     db = sqlite3.connect("%s/db" % dbpath)
     cursor = db.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS quotes (chatid int, keyword text not null, quote text not null)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS quotes (chatid int, keyword text not null, quote text not null,\
+                   type text not null, thumb text)')
     cursor.execute('CREATE TABLE IF NOT EXISTS levels (chatid int, level int)')
     db.commit()
     db.close()
@@ -87,7 +92,8 @@ def trollset(message):
     markup = telebot.types.ReplyKeyboardMarkup(row_width=1, selective=True)
     for entry in range(0, 6):
         markup.add(telebot.types.KeyboardButton(str(entry)))
-    bot.send_message(message.chat.id, "Allright @%s. Pick level of activity" % message.from_user.username, reply_markup=markup)
+    bot.send_message(message.chat.id, "Allright @%s. Pick level of activity" %
+                     message.from_user.username, reply_markup=markup)
     return
 
 
@@ -113,7 +119,7 @@ def trolllist(message):
     if 'group' not in message.chat.type:
         bot.reply_to(message, "No quotes available outside of groups")
         return
-    cursor.execute('SELECT keyword,quote FROM quotes where chatid = ? ORDER BY keyword', (message.chat.id,))
+    cursor.execute('SELECT keyword,quote,type,thumb FROM quotes where chatid = ? ORDER BY keyword', (message.chat.id,))
     results = cursor.fetchall()
     db.close()
     print("Sending all troll messages to user %s" % message.from_user.username)
@@ -122,11 +128,19 @@ def trolllist(message):
     else:
         quotes = ''
         for q in results:
-            keyword, quote = q[0], q[1]
-            if len(quote.split(' ')) == 1 and len(quote) >= 30:
-                quote = 'MEDIA'
+            keyword, quote, _type, thumb = q
             quotes = '%s%s -> %s\n' % (quotes, keyword, quote)
-        bot.reply_to(message, quotes)
+            if _type == 'text':
+                bot.send_message(message.chat.id, '%s : %s' % (keyword, thumb))
+            elif _type == 'photo':
+                doc = open('/tmp/troll/thumbs/%s.jpg' % thumb, 'rb')
+                bot.send_photo(message.chat.id, doc, caption="%s : %s" % (keyword, thumb))
+            elif _type == 'video':
+                doc = open('/tmp/troll/thumbs/%s.mp4' % thumb, 'rb')
+                bot.send_video(message.chat.id, doc, caption="%s : %s" % (keyword, thumb))
+            else:
+                bot.send_message(message.chat.id, '%s : %s' % (keyword, thumb))
+        # bot.reply_to(message, quotes)
 
 
 @bot.message_handler(commands=["trolladd", "trolladd%s" % botname])
@@ -134,7 +148,8 @@ def trolladd(message):
     if 'group' not in message.chat.type:
         bot.reply_to(message, 'Trolls can only be added to groups')
         return
-    bot.send_message(message.chat.id, "Allright @%s. Give me a keyword. Put $ at the end for a rhyme" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
+    bot.send_message(message.chat.id, "Allright @%s. Give me a keyword. Put $ at the end for a rhyme" %
+                     message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
     return
 
 
@@ -146,7 +161,7 @@ def trolldelete(message):
         return
     db = sqlite3.connect(trolldb)
     cursor = db.cursor()
-    cursor.execute('''SELECT keyword,quote FROM quotes where chatid = ? ORDER BY keyword''', (message.chat.id,))
+    cursor.execute('''SELECT keyword,thumb FROM quotes where chatid = ? ORDER BY keyword''', (message.chat.id,))
     existing = cursor.fetchall()
     db.close()
     if not existing:
@@ -154,8 +169,9 @@ def trolldelete(message):
     else:
         markup = telebot.types.ReplyKeyboardMarkup(row_width=1, selective=True)
         for entry in existing:
-            markup.add(telebot.types.KeyboardButton("%s -> %s" % (entry[0], entry[1])))
-        bot.send_message(message.chat.id, "Allright @%s. Delete a troll" % message.from_user.username, reply_markup=markup)
+            markup.add(telebot.types.KeyboardButton("%s : %s" % (entry[0], entry[1])))
+        bot.send_message(message.chat.id, "Allright @%s. Delete a troll" %
+                         message.from_user.username, reply_markup=markup)
     return
 
 
@@ -178,7 +194,7 @@ def custom(message):
                 cursor.execute('''DELETE FROM levels where chatid = ?''', (message.chat.id,))
                 cursor.execute('''INSERT INTO levels(chatid,level) VALUES(?,?)''', (message.chat.id, level))
                 print("Troll level set for group %s" % message.chat.title)
-                markup = telebot.types.ReplyKeyboardHide(selective=True)
+                markup = telebot.types.ReplyKeyboardRemove(selective=True)
                 bot.reply_to(message, 'Troll level set for your group', reply_markup=markup)
                 db.commit()
                 db.close()
@@ -187,36 +203,60 @@ def custom(message):
                 if message.text is not None:
                     quote = message.text.strip()
                     if keyword[-1] == '$' and (len(quote) < 4 or quote[-4:] != keyword[-5:-1]):
-                        markup = telebot.types.ReplyKeyboardHide(selective=True)
+                        markup = telebot.types.ReplyKeyboardHRemove(selective=True)
                         print("Invalid format for this rhyme")
                         bot.reply_to(message, 'Invalid format for this rhyme', reply_markup=markup)
                         return
+                    _type = 'text'
                 elif message.sticker is not None:
                     quote = message.sticker.file_id
+                    _type = 'sticker'
                 elif message.document is not None:
                     quote = message.document.file_id
+                    _type = 'document'
                 elif message.photo is not None:
                     quote = message.photo[0].file_id
+                    _type = 'photo'
                 elif message.audio is not None:
                     quote = message.audio.file_id
+                    _type = 'audio'
                 elif message.voice is not None:
                     quote = message.voice.file_id
+                    _type = 'voice'
                 else:
                     print("Invalid format for this quote")
-                    markup = telebot.types.ReplyKeyboardHide(selective=True)
+                    markup = telebot.types.ReplyKeyboardRemove(selective=True)
                     bot.reply_to(message, 'Invalid format for this quote', reply_markup=markup)
                     return
+                thumb = (''.join(choice(ascii_uppercase) for i in range(5))) if _type != 'text' else quote
+                if _type in ['photo', 'document']:
+                    file_info = bot.get_file(quote)
+                    file_path = file_info.file_path
+                    extension = file_path.split('.')[-1]
+                    if extension == 'mp4':
+                        _type = 'video'
+                    r = requests.get('https://api.telegram.org/file/bot%s/%s' % (token, file_path))
+                    thumbpath = "%s/%s.%s" % ('/tmp/troll/thumbs', thumb, extension)
+                    if os.path.exists(thumbpath):
+                        bot.reply_to(message, """Wow, you randomly hit an existing id!!!
+                                     Crazy! Btw, won't create anything""")
+                        return
+                    with open(thumbpath, 'wb') as f:
+                        f.write(r.content)
                 db = sqlite3.connect(trolldb)
                 cursor = db.cursor()
-                cursor.execute('''SELECT quote FROM quotes where chatid = ? AND quote = ? AND keyword = ?''', (message.chat.id, quote, keyword))
+                cursor.execute('''SELECT quote FROM quotes where chatid = ? AND quote = ? AND keyword = ?''',
+                               (message.chat.id, quote, keyword))
                 results = cursor.fetchall()
                 if results:
                     print("Quote already exists for this keyword")
                     bot.reply_to(message, 'Quote already exists for this keyword')
                 else:
-                    cursor.execute('''INSERT INTO quotes(chatid,keyword,quote) VALUES(?,?,?)''', (message.chat.id, keyword, quote))
+                    cursor.execute('''INSERT INTO quotes(chatid,keyword,quote,type,thumb) VALUES(?,?,?,?,?)''',
+                                   (message.chat.id, keyword, quote, _type, thumb))
                     print("Adding Troll to group %s" % message.chat.title)
-                    bot.reply_to(message, 'Troll added to your group')
+                    markup = telebot.types.ReplyKeyboardRemove(selective=True)
+                    bot.reply_to(message, 'Troll added to your group', reply_markup=markup)
                 db.commit()
                 db.close()
             elif 'Give me a keyword' in message.reply_to_message.text:
@@ -228,22 +268,26 @@ def custom(message):
                 if len(text.strip().split(' ')) > 1 or len(text.strip()) == 1:
                     bot.send_message(message.chat.id, "Wrong @%s. I needed a single word" % message.from_user.username)
                 elif text[-1] == '$' and len(text) < 5:
-                    bot.send_message(message.chat.id, "Wrong @%s. You need at least 5 characters for a rhyme" % message.from_user.username)
+                    bot.send_message(message.chat.id, "Wrong @%s. You need at least 5 characters for a rhyme" %
+                                     message.from_user.username)
                 else:
                     if text[-1] == '$':
                         keywords[message.from_user.username] = text.lower()
                     else:
                         keywords[message.from_user.username] = text.strip().lower()
-                    bot.send_message(message.chat.id, "Allright @%s. Give me a troll. you can also use randomgif or randomgif KEYWORD" % message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
+                    bot.send_message(message.chat.id,
+                                     "Allright @%s. Give me a troll. you can also use randomgif or randomgif KEYWORD" %
+                                     message.from_user.username, reply_markup=telebot.types.ForceReply(selective=True))
             elif 'Delete a troll' in message.reply_to_message.text:
-                keyword = message.text.strip().split('->')[0].strip()
-                quote = message.text.strip().split('->')[1].strip()
+                keyword = message.text.strip().split(':')[0].strip()
+                thumb = message.text.strip().split(':')[1].strip()
                 db = sqlite3.connect(trolldb)
                 cursor = db.cursor()
-                deleted = cursor.execute('''DELETE FROM quotes WHERE chatid = ? AND keyword = ? AND quote = ?''', (message.chat.id, keyword, quote))
+                deleted = cursor.execute('''DELETE FROM quotes WHERE chatid = ? AND keyword = ? AND thumb = ?''',
+                                         (message.chat.id, keyword, thumb))
                 if deleted.rowcount > 0:
                     print("Deleted Troll from group %s" % message.chat.title)
-                    markup = telebot.types.ReplyKeyboardHide(selective=True)
+                    markup = telebot.types.ReplyKeyboardRemove(selective=True)
                     bot.reply_to(message, 'Troll deleted from your group', reply_markup=markup)
                 else:
                     bot.reply_to(message, 'No troll found to delete')
@@ -271,7 +315,8 @@ def custom(message):
                 if index == len(words) - 1 and "%s$" % word in quotekeys:
                     word = "%s$" % word
                 if word.strip().lower() in quotekeys:
-                    cursor.execute('''SELECT quote FROM quotes where chatid = ? AND keyword = ? ORDER BY RANDOM() LIMIT 1''', (message.chat.id, word))
+                    cursor.execute('''SELECT quote FROM quotes where chatid = ?
+                                   AND keyword = ? ORDER BY RANDOM() LIMIT 1''', (message.chat.id, word))
                     quote = cursor.fetchone()
                     if 'randomgif' in quote[0].lower():
                         search = quote[0].split(' ')[1] if len(quote[0].split(' ')) == 2 else word
